@@ -19,6 +19,10 @@ draft: false
 
 ## 把自启任务优先级改回「正常」
 
+> **先检查现有任务。** v2rayN 已合并[自启修复 #9366](https://github.com/2dust/v2rayN/pull/9366)。以 [7.22.4 的实现](https://github.com/2dust/v2rayN/blob/7.22.4/v2rayN/ServiceLib/Handler/AutoStartupHandler.cs#L100-L111)为例，在 Windows 上以管理员身份首次开启自启时，新建的计划任务使用「正常」优先级，也没有登录后 30 秒的延迟。
+>
+> 我是在修复前就开启了自启，升级后原来的计划任务没有更新，所以仍保留旧的优先级和延迟。如果你也是从旧版升级，先检查现有任务：已经是「正常」优先级且没有延迟，就不用手动改 XML。
+
 打开 Windows「任务计划程序」，在任务计划程序库里找到 v2rayN 的自启任务。名称可能因安装而异，建议从「操作」里确认它指向自己的 `v2rayN.exe`，再看「触发器」是否为「登录时」。
 
 我这里读到的任务优先级是 `7`。按 [Microsoft Learn 的映射表](https://learn.microsoft.com/en-us/windows/win32/taskschd/tasksettings-priority)，计划任务的 `7` 对应进程的「低于正常」，`4` 对应「正常」。这两个数字是**计划任务**的设置值，不是任务管理器里的档位编号。
