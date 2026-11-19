@@ -25,15 +25,34 @@ const isBriefing = post.data.format === 'briefing';
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     margin: 28px 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--astro-code-background);
+  }
+
+  .code-copy-header {
+    grid-area: 1 / 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    min-height: 46px;
+    padding: 0 116px 0 14px;
+    border-radius: 7px 7px 0 0;
+    background: color-mix(in srgb, var(--astro-code-background) 94%, var(--astro-code-foreground));
+    color: var(--muted);
+    font: 500 13px/1.25 var(--mono);
   }
 
   [data-article-content] .code-copy-block > pre {
-    grid-area: 1 / 1;
+    grid-area: 2 / 1;
     margin: 0;
+    border: 0;
+    border-radius: 0 0 7px 7px;
   }
 
   .code-copy-tools {
-    grid-area: 1 / 1;
+    grid-area: 1 / 1 / 3 / 2;
     position: sticky;
     top: 0;
     align-self: start;
@@ -48,7 +67,7 @@ const isBriefing = post.data.format === 'briefing';
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 32px;
+    min-height: 34px;
     padding: 4px 10px;
     border: 1px solid var(--line);
     border-radius: 5px;
@@ -68,14 +87,8 @@ const isBriefing = post.data.format === 'briefing';
     outline-offset: 2px;
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    .code-copy-block:not(:hover):not(:focus-within) .code-copy-button {
-      opacity: 0;
-      pointer-events: none;
-    }
-  }
-
   @media (hover: none), (pointer: coarse) {
+    .code-copy-header { min-height: 56px; }
     .code-copy-button { min-height: 44px; }
   }
 
@@ -93,6 +106,17 @@ const isBriefing = post.data.format === 'briefing';
 <script>
   const copyIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
 
+  const languageNames = new Map(Object.entries({
+    cpp: 'C++', c: 'C', csharp: 'C#', cs: 'C#', javascript: 'JavaScript',
+    js: 'JavaScript', typescript: 'TypeScript', ts: 'TypeScript', tsx: 'TSX',
+    jsx: 'JSX', html: 'HTML', css: 'CSS', json: 'JSON', yaml: 'YAML',
+    yml: 'YAML', xml: 'XML', bash: 'Bash', sh: 'Shell', shell: 'Shell',
+    powershell: 'PowerShell', python: 'Python', py: 'Python', rust: 'Rust',
+    go: 'Go', java: 'Java', sql: 'SQL', cmake: 'CMake', qmake: 'qmake',
+    markdown: 'Markdown', md: 'Markdown', text: '纯文本', txt: '纯文本',
+    plaintext: '纯文本', plain: '纯文本',
+  }));
+
   for (const pre of document.querySelectorAll<HTMLPreElement>('[data-article-content] pre')) {
     const code = pre.querySelector('code');
     if (!code || pre.parentElement?.classList.contains('code-copy-block')) continue;
@@ -100,7 +124,17 @@ const isBriefing = post.data.format === 'briefing';
     const block = document.createElement('div');
     block.className = 'code-copy-block';
     pre.before(block);
-    block.append(pre);
+    const header = document.createElement('div');
+    header.className = 'code-copy-header';
+    const language = pre.dataset.language ||
+      [...code.classList].find(value => value.startsWith('language-'))?.slice(9);
+    const codeIcon = document.createElement('span');
+    codeIcon.setAttribute('aria-hidden', 'true');
+    codeIcon.textContent = '</>';
+    const languageLabel = document.createElement('span');
+    languageLabel.textContent = language ? languageNames.get(language.toLowerCase()) ?? language : '纯文本';
+    header.append(codeIcon, languageLabel);
+    block.append(header, pre);
 
     const tools = document.createElement('div');
     tools.className = 'code-copy-tools';
