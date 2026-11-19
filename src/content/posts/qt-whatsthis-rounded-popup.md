@@ -9,8 +9,6 @@ draft: false
 sample: false
 ---
 
-# 绕过 Qt 写死的边框，给原生 QWhatsThis 画圆角
-
 Qt 5.15.2 在帮助窗口的 `paintEvent()` 里直接调用 `QPainter::drawRect()` 画出内外两道边。调色板能换颜色，重写 `QStyle::drawPrimitive()` 却接不到这两笔。要改形状，可以在 `QEvent::Polish` 时找到 Qt 创建的弹窗。**给它安装 `QGraphicsEffect`，就能改变 Qt 画出的结果。在它的事件过滤器中接下 `QEvent::Paint`，则可以自己绘制整张帮助卡片。**
 
 下面的对照来自同一个按钮、同一段 JPEG 说明。两次都通过 `QWhatsThis::showText()` 打开，也都能用 Esc 或 `hideText()` 关闭。
