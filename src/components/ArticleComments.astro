@@ -8,11 +8,9 @@ const { article } = Astro.props;
   <form data-compose class="comment-form">
     <label>昵称 <span>（选填）</span><input name="nickname" maxlength="40" autocomplete="off" placeholder="游客" /></label>
     <label>留言<textarea name="body" required maxlength="2000" rows="3"></textarea></label>
-    <div class="comment-actions">
-      <button type="button" class="comment-secondary" data-verify-start disabled>开始验证</button>
-      <div data-verification hidden></div>
-      <button type="submit" class="comment-primary" disabled>发表留言</button>
-    </div>
+    <div data-verification hidden></div>
+    <button type="button" class="comment-secondary" data-verify-retry hidden>验证框加载失败，点击重试</button>
+    <button type="submit" class="comment-primary" disabled>发表留言</button>
     <p data-submit-status role="status"></p>
   </form>
   <p data-list-status role="status"></p>
@@ -23,9 +21,9 @@ const { article } = Astro.props;
       <h3 id="feedback-title">留言反馈</h3>
       <label>原因<select name="reason" required><option value="spam">广告刷屏</option><option value="abuse">攻击或隐私问题</option><option value="removal">申请移除自己的留言</option><option value="other">其他</option></select></label>
       <label>补充说明 <span>（选填）</span><textarea name="detail" maxlength="500" rows="3"></textarea></label>
+      <div data-verification hidden></div>
+      <button type="button" class="comment-secondary" data-verify-retry hidden>验证框加载失败，点击重试</button>
       <div class="comment-actions">
-        <button type="button" class="comment-secondary" data-verify-start disabled>开始验证</button>
-        <div data-verification hidden></div>
         <button type="submit" class="comment-primary" disabled>提交反馈</button>
         <button type="button" data-cancel class="comment-secondary">取消</button>
       </div>

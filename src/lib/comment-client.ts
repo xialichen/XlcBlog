@@ -1,5 +1,5 @@
 import { action, commentCard, el, errorMessage, requestJson, type CommentRow, type Page } from './comment-view';
-import { manualVerification } from './comment-verification';
+import { attachTurnstile } from './comment-verification';
 
 export function mountComments(root: HTMLElement) {
   const post = root.dataset.article!, keyName = 'xlc.comments.owner.' + post;
@@ -11,7 +11,7 @@ export function mountComments(root: HTMLElement) {
   const more = root.querySelector<HTMLButtonElement>('[data-more]')!;
   const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
   const reportForm = dialog.querySelector('form')!, reportStatus = reportForm.querySelector<HTMLElement>('[role=status]')!;
-  const check = manualVerification(form, 'comment'), reportCheck = manualVerification(reportForm, 'feedback');
+  const check = attachTurnstile(form, 'comment'), reportCheck = attachTurnstile(reportForm, 'feedback');
   let sitekey = '', next: string | null = null, target = '', reportId = '', currentLoad = 0;
   let submission: { signature: string; id: string } | undefined;
 
@@ -37,7 +37,7 @@ export function mountComments(root: HTMLElement) {
     target = id; reportId = crypto.randomUUID();
     reportForm.reset(); reportStatus.textContent = '';
     dialog.showModal();
-    reportCheck.prepare(sitekey);
+    void reportCheck.show(sitekey);
     if (!sitekey) reportStatus.textContent = '反馈暂时不可用，请稍后重试。';
   }
   async function withdraw(id: string) {
@@ -71,8 +71,8 @@ export function mountComments(root: HTMLElement) {
       const newKey = data.sitekey || '';
       if (newKey !== sitekey) {
         sitekey = newKey;
-        check.prepare(sitekey);
-        if (dialog.open) reportCheck.prepare(sitekey);
+        void check.show(sitekey);
+        if (dialog.open) void reportCheck.show(sitekey);
       }
       if (!sitekey) status.textContent = '发表暂时不可用。';
     } catch (error) {
@@ -96,10 +96,10 @@ export function mountComments(root: HTMLElement) {
       submission = undefined;
       await reload();
     } catch (error) { status.textContent = errorMessage(error); }
-    finally { check.prepare(sitekey); }
+    finally { void check.show(sitekey); }
   });
   dialog.querySelector('[data-cancel]')!.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => { if (!dialog.open) reportCheck.prepare(''); });
+  dialog.addEventListener('close', () => { if (!dialog.open) reportCheck.clear(); });
   reportForm.addEventListener('submit', async event => {
     event.preventDefault();
     const token = reportCheck.takeToken();
@@ -114,7 +114,7 @@ export function mountComments(root: HTMLElement) {
     } catch (error) {
       if (id === reportId && dialog.open) {
         reportStatus.textContent = errorMessage(error);
-        reportCheck.prepare(sitekey);
+        void reportCheck.show(sitekey);
       }
     }
   });

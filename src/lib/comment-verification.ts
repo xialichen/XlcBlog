@@ -1,5 +1,7 @@
 interface Turnstile {
   render(target: HTMLElement, options: Record<string, unknown>): string;
+  getResponse(id: string): string | undefined;
+  isExpired(id: string): boolean;
   remove(id: string): void;
 }
 declare global { interface Window { turnstile?: Turnstile } }
@@ -19,67 +21,67 @@ function loadTurnstile() {
   return script;
 }
 
-export function manualVerification(form: HTMLFormElement, action: 'comment' | 'feedback') {
-  const start = form.querySelector<HTMLButtonElement>('[data-verify-start]')!;
+export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feedback') {
+  const retry = form.querySelector<HTMLButtonElement>('[data-verify-retry]')!;
   const submit = form.querySelector<HTMLButtonElement>('[type=submit]')!;
   const container = form.querySelector<HTMLElement>('[data-verification]')!;
-  const status = form.querySelector<HTMLElement>('[role=status]')!;
-  let sitekey = '', token = '', generation = 0;
+  let sitekey = '', generation = 0;
   let widget: string | undefined;
 
-  function discard() {
+  function clear() {
     generation++;
-    token = '';
+    sitekey = '';
     submit.disabled = true;
+    retry.hidden = true;
     if (widget !== undefined) window.turnstile?.remove(widget);
     widget = undefined;
     container.hidden = true;
   }
-  function prepare(key: string) {
-    discard();
-    sitekey = key;
-    start.disabled = !key;
-    start.hidden = false;
-    start.textContent = '开始验证';
+  function currentToken() {
+    const api = window.turnstile;
+    if (widget === undefined || !api || api.isExpired(widget)) return '';
+    return api.getResponse(widget) || '';
   }
-  start.addEventListener('click', async () => {
-    if (start.disabled || !sitekey) return;
-    const version = ++generation;
-    start.disabled = true;
-    start.textContent = '正在加载验证…';
-    status.textContent = '';
-    function retry(message: string) {
-      if (version !== generation) return;
-      prepare(sitekey);
-      start.textContent = '重新验证';
-      status.textContent = message;
-    }
+  async function show(key: string) {
+    clear();
+    if (!key) return;
+    sitekey = key;
+    const version = generation;
+    const lock = () => { if (version === generation) submit.disabled = true; };
     try {
       const api = await loadTurnstile();
       if (version !== generation) return;
       container.hidden = false;
       const id = api.render(container, {
-        sitekey, action, theme: 'auto', retry: 'never',
-        'refresh-expired': 'never', 'refresh-timeout': 'never', 'response-field': false,
+        sitekey, action, theme: 'auto', appearance: 'always',
+        size: container.clientWidth < 300 ? 'compact' : 'normal',
+        'refresh-expired': 'manual', 'refresh-timeout': 'manual', 'response-field': false,
         callback: (value: string) => {
           if (version !== generation) return;
-          token = value;
-          submit.disabled = !token;
+          submit.disabled = !value || (widget !== undefined && value !== currentToken());
         },
-        'expired-callback': () => retry('验证已过期，请重新验证。'),
-        'timeout-callback': () => retry('验证已超时，请重新验证。'),
-        'error-callback': () => { retry('验证失败，请重新验证。'); return true; },
-        'unsupported-callback': () => retry('当前浏览器不支持人机验证，请更换浏览器。'),
+        'expired-callback': lock, 'timeout-callback': lock, 'unsupported-callback': lock,
+        'error-callback': () => { lock(); return true; },
       });
-      if (version === generation) { widget = id; start.hidden = true; }
+      if (version === generation) widget = id;
       else api.remove(id);
-    } catch { retry('人机验证加载失败，请重新验证。'); }
+    } catch {
+      if (version !== generation) return;
+      submit.disabled = true;
+      container.hidden = true;
+      retry.hidden = false;
+    }
+  }
+  retry.addEventListener('click', () => {
+    if (!retry.hidden) void show(sitekey);
   });
   return {
-    prepare,
+    show, clear,
     takeToken() {
-      const value = token;
-      if (value) discard();
+      if (submit.disabled) return '';
+      const value = currentToken();
+      if (value) clear();
+      else void show(sitekey);
       return value;
     },
   };
