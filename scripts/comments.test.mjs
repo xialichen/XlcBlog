@@ -40,7 +40,9 @@ async function fixture(t) {
     OWNER_EMAIL: email, MAIL_FROM: 'comments@example.test', ADMIN_URL: origin + '/admin/comments/',
     MAIL: { send: async message => sent.push(message) },
     ASSETS: { fetch(url) {
-      const id = new URL(url).pathname.slice('/comment-articles/'.length, -5);
+      const path = new URL(url).pathname;
+      if (path === '/comment-article-categories.json') return Response.json({ alpha: '技术', beta: '设计', 'notes/gamma': '技术' });
+      const id = path.slice('/comment-articles/'.length, -5);
       return ['alpha', 'beta'].includes(id) ? Response.json({ id, title: id + ' 标题' }) : new Response('', { status: 404 });
     } },
   };
@@ -162,7 +164,9 @@ test('管理页组合筛选文章、留言日期和正文，并可跨状态检�
   const criteria = { article: 'alpha', from, until, q: '  进度 100%_qt  ' };
   const results = await search({ ...criteria, filter: 'all', include: 'articles' });
   assert.deepEqual(results.items.map(row => row.id), [hidden, pending, first]);
-  assert.deepEqual(results.articles, [{ article: 'alpha', title: '新标题' }, { article: 'beta', title: '另一篇文章' }]);
+  assert.deepEqual(results.articles, [
+    { article: 'alpha', title: '新标题', category: '技术' }, { article: 'beta', title: '另一篇文章', category: '设计' },
+  ]);
   assert.deepEqual((await search({ ...criteria, filter: 'tasks' })).items.map(row => row.id), [pending, first]);
   assert.deepEqual((await search({ ...criteria, filter: 'hidden' })).items.map(row => row.id), [hidden]);
   assert.deepEqual((await search({ ...criteria, filter: 'published' })).items.map(row => row.id), [first]);
@@ -188,6 +192,33 @@ test('管理页先筛选再分页，相同时间的匹配留言不会重复或�
   const second = await call(base + '&before=' + encodeURIComponent(first.data.next), undefined, admin);
   assert.equal(second.data.next, null);
   assert.deepEqual([...first.data.items, ...second.data.items].map(row => row.id), ids);
+});
+
+test('文章类型按归档分类跨文章筛选，在分页之前与留言条件取交集', async t => {
+  const { call, sql, admin } = await fixture(t);
+  const time = 1000, body = '渲染笔记';
+  const ids = Array.from({ length: 22 }, (_, i) =>
+    insertComment(sql, { article: i % 2 ? 'alpha' : 'notes/gamma', time, body })).sort().reverse();
+  for (let i = 0; i < 25; i++) insertComment(sql, { article: 'beta', time: time + 1, body });
+  const archived = insertComment(sql, { article: 'old-post', time, body });
+  insertComment(sql, { article: 'alpha', time: time + 2, state: 'hidden', body });
+  insertComment(sql, { article: 'alpha', time: time + 10, body });
+  insertComment(sql, { article: 'notes/gamma', time, body: '其他内容' });
+  const criteria = { category: '技术', filter: 'published', q: '渲染', from: time, until: time + 5 };
+  async function search(params) {
+    const response = await call('/admin/comments/api?' + new URLSearchParams(params), undefined, admin);
+    assert.equal(response.status, 200);
+    return response.data;
+  }
+  const first = await search({ ...criteria, include: 'articles' });
+  const second = await search({ ...criteria, before: first.next });
+  assert.deepEqual([...first.items, ...second.items].map(row => row.id), ids);
+  assert.equal(second.next, null);
+  assert.equal(first.articles.find(entry => entry.article === 'old-post').category, null);
+  assert.equal((await search({ ...criteria, article: 'alpha' })).items.length, 11);
+  assert.deepEqual((await search({ ...criteria, article: 'beta' })).items, []);
+  assert.deepEqual((await search({ ...criteria, category: '不存在的分类' })).items, []);
+  assert.deepEqual((await search({ filter: 'all', article: 'old-post' })).items.map(row => row.id), [archived]);
 });
 
 test('限频、文章白名单、分页和失败提交', async t => {

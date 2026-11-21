@@ -1,34 +1,82 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostCategoryFilters from '../../../components/PostCategoryFilters.astro';
+import { getPosts } from '../../../lib/posts';
 import '../../../styles/comments.css';
+import '../../../styles/comment-filters.css';
+const posts = await getPosts();
 ---
 <BaseLayout title="评论管理">
   <section class="comment-admin" data-admin>
-    <h1>评论管理</h1>
-    <div class="comment-filters" role="group" aria-label="留言分类">
-      <button type="button" data-filter="tasks" aria-pressed="true">待处理</button>
-      <button type="button" data-filter="published" aria-pressed="false">已公开</button>
-      <button type="button" data-filter="hidden" aria-pressed="false">已隐藏</button>
-      <button type="button" data-filter="all" aria-pressed="false">全部留言</button>
-    </div>
+    <header class="comment-admin-heading">
+      <h1>评论管理</h1>
+      <div class="comment-filters" role="group" aria-label="留言状态">
+        <button type="button" data-filter="tasks" aria-pressed="true">待处理</button>
+        <button type="button" data-filter="published" aria-pressed="false">已公开</button>
+        <button type="button" data-filter="hidden" aria-pressed="false">已隐藏</button>
+        <button type="button" data-filter="all" aria-pressed="false">全部留言</button>
+      </div>
+    </header>
     <form data-comment-search class="comment-admin-search" role="search" aria-label="筛选留言">
-      <label class="comment-field">所属文章
-        <select name="article" disabled><option value="">全部文章</option></select>
-      </label>
-      <label class="comment-field">留言关键词
-        <input type="search" name="q" maxlength="2000" placeholder="搜索留言正文" />
-      </label>
-      <fieldset class="comment-date-range">
-        <legend>留言日期 <small>本地时间</small></legend>
-        <div>
-          <label class="comment-field"><span class="sr-only">开始日期</span><input type="date" name="startDate" /></label>
-          <span aria-hidden="true">至</span>
-          <label class="comment-field"><span class="sr-only">结束日期</span><input type="date" name="endDate" /></label>
+      <div class="comment-category-row">
+        <span class="filter-label" aria-hidden="true">文章类型</span>
+        <PostCategoryFilters posts={posts} />
+      </div>
+      <div class="filter-article" data-article-picker>
+        <label class="filter-label" id="article-label" for="article-trigger">所属文章</label>
+        <input type="hidden" name="article" />
+        <button class="filter-control filter-article-trigger" id="article-trigger" type="button" disabled
+          aria-labelledby="article-label article-choice" aria-haspopup="listbox" aria-expanded="false" aria-controls="article-options">
+          <span id="article-choice">全部文章</span>
+          <span class="filter-chevron" aria-hidden="true"></span>
+        </button>
+        <div id="article-options" class="filter-popup filter-article-options" role="listbox" aria-labelledby="article-label" hidden></div>
+      </div>
+      <fieldset class="filter-dates">
+        <legend class="filter-label">留言日期 <small>本地时间</small></legend>
+        <div class="filter-date-range">
+          {['startDate', 'endDate'].map((name, i) => {
+            const label = i === 0 ? '开始日期' : '结束日期';
+            return <>
+              {i > 0 && <span class="filter-range-dash" aria-hidden="true">—</span>}
+              <div class="filter-date-part">
+                <input type="text" name={name} aria-label={label} placeholder={label}
+                  aria-describedby="date-format" autocomplete="off" spellcheck="false" maxlength="10" />
+                <button type="button" data-pick-date={name} aria-label={`选择${label}`}
+                  aria-haspopup="dialog" aria-controls="comment-calendar" aria-expanded="false">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7.5 3v5m9-5v5M4 10.5h16"/>
+                  </svg>
+                </button>
+              </div>
+            </>;
+          })}
+        </div>
+        <span id="date-format" class="sr-only">可输入年-月-日，或打开日历选择。</span>
+        <div id="comment-calendar" class="filter-popup filter-calendar" role="dialog" aria-label="选择日期" hidden>
+          <div class="calendar-heading">
+            <strong data-month aria-live="polite"></strong>
+            <span data-date-label></span>
+            <button type="button" data-month-step="-1" aria-label="上个月"><span class="filter-chevron" aria-hidden="true"></span></button>
+            <button type="button" data-month-step="1" aria-label="下个月"><span class="filter-chevron" aria-hidden="true"></span></button>
+          </div>
+          <div class="calendar-week" aria-hidden="true">{['一','二','三','四','五','六','日'].map(day => <span>{day}</span>)}</div>
+          <div class="calendar-days" role="group" aria-label="日期"></div>
+          <div class="calendar-actions">
+            <button type="button" data-clear-date>清除此日期</button>
+            <button type="button" data-today>今天</button>
+          </div>
         </div>
       </fieldset>
-      <div class="comment-actions">
-        <button class="comment-primary" type="submit">应用筛选</button>
+      <label class="filter-keyword"><span class="filter-label">留言关键词</span>
+        <span class="filter-control">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+          <input type="search" name="q" maxlength="2000" placeholder="搜索留言正文" />
+        </span>
+      </label>
+      <div class="filter-actions">
         <button class="comment-secondary" type="reset">清除筛选</button>
+        <button class="comment-primary" type="submit">应用筛选</button>
       </div>
     </form>
     <p data-list-status class="comment-notice" role="status"></p>

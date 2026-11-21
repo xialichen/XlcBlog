@@ -1,0 +1,143 @@
+.comment-admin { max-width: 860px; margin: 48px auto 72px; }
+.comment-admin-heading {
+  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.comment-admin-heading h1 { margin: 0 0 14px; font-size: clamp(28px, 4vw, 34px); }
+.comment-filters { display: flex; align-self: stretch; align-items: stretch; gap: 4px; }
+.comment-filters button {
+  padding: 8px 13px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+  color: var(--muted); background: transparent; font: 500 14px/1.5 var(--sans);
+}
+.comment-filters button[aria-pressed=true] { color: var(--accent); border-color: var(--accent); }
+.comment-admin-search {
+  --filter-paper: color-mix(in srgb, var(--surface) 50%, var(--bg));
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .58fr) auto;
+  grid-template-areas: "categories categories categories" "article dates dates" "keyword keyword actions";
+  align-items: end; gap: 14px 18px; margin: 18px 0 10px; padding: 0 20px 20px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--filter-paper);
+}
+.comment-category-row {
+  grid-area: categories; display: flex; align-items: baseline; gap: 8px 16px; flex-wrap: wrap;
+  padding-block: 12px; border-bottom: 1px solid var(--line);
+}
+.filter-label { display: block; padding: 0; margin-bottom: 5px; font-size: 13px; font-weight: 600; }
+.comment-category-row .filter-label { margin: 0; }
+.comment-category-row .category-filters { gap: 3px; }
+.comment-category-row .category-filters button { border-radius: 4px; font-size: 13px; }
+.filter-article { grid-area: article; }
+.filter-dates { grid-area: dates; margin: 0; border: 0; padding: 0; }
+.filter-article, .filter-dates { position: relative; min-width: 0; }
+.filter-label small { margin-left: 5px; font-size: 11px; font-weight: 400; color: var(--muted); }
+.filter-keyword { grid-area: keyword; min-width: 0; }
+.filter-control, .filter-date-part {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; min-height: 42px;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--text);
+}
+.filter-control { padding-inline: 12px; }
+.filter-control input, .filter-date-part input {
+  flex: 1; width: 0; min-width: 0; height: 40px; padding: 0; border: 0; outline: none;
+  color: var(--text); background: transparent; font: 400 14px/1.5 var(--sans);
+}
+.filter-control svg, .filter-control input::placeholder, .filter-date-part input::placeholder { color: var(--muted); }
+.filter-article-trigger { justify-content: space-between; text-align: start; font: 400 14px/1.5 var(--sans); }
+.filter-article-trigger > span:first-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.filter-chevron {
+  display: inline-block; flex: none; width: 7px; height: 7px; margin-inline: 2px;
+  border: solid currentColor; border-width: 0 1.5px 1.5px 0; color: var(--muted); transform: rotate(45deg);
+}
+.filter-article-trigger[aria-expanded=true] .filter-chevron { transform: rotate(225deg); }
+.filter-date-range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.filter-range-dash { font-size: 12px; color: var(--muted); }
+.filter-date-part { gap: 0; padding-left: 10px; }
+.filter-date-part input { font-variant-numeric: tabular-nums; }
+.filter-date-part button, .calendar-heading button {
+  flex: none; display: grid; place-items: center; align-self: stretch; width: 34px;
+  padding: 0; background: transparent; color: var(--muted); border-radius: 4px;
+}
+.filter-actions { grid-area: actions; display: flex; align-items: center; gap: 8px; }
+.filter-actions button { min-height: 42px; padding-inline: 14px; white-space: nowrap; }
+.filter-actions .comment-secondary { color: var(--muted); border-color: transparent; }
+.filter-control:focus-within, .filter-date-part:focus-within, .filter-article-trigger[aria-expanded=true],
+.filter-date-part:has([aria-expanded=true]) { border-color: var(--accent); }
+.filter-control:has(input:focus-visible), .filter-date-part:has(input:focus-visible),
+.comment-admin-search button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filter-control input:focus-visible, .filter-date-part input:focus-visible { outline: none; }
+
+.filter-popup {
+  position: absolute; z-index: 3; top: calc(100% + 5px); margin: 0; padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, var(--muted)); border-radius: 7px;
+  background: var(--bg); color: var(--text); box-shadow: 0 8px 26px rgb(0 0 0 / .14);
+}
+.filter-article-options { inset-inline: 0; max-height: min(19rem, 50dvh); overflow-y: auto; overscroll-behavior: contain; }
+.filter-article-options button {
+  position: relative; display: block; width: 100%; min-height: 38px; padding: 8px 30px 8px 10px; border-radius: 4px;
+  text-align: start; overflow-wrap: anywhere; background: transparent; color: var(--text); font-size: 14px; line-height: 1.5;
+}
+.filter-article-options button[aria-selected=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.filter-article-options button[aria-selected=true]::after {
+  content: ''; position: absolute; inset-inline-end: 13px; top: 50%; width: 6px; height: 10px;
+  border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-65%) rotate(45deg);
+}
+.filter-calendar { inset-inline-end: 0; width: min(100%, 19.5rem); padding: 12px; }
+.filter-dates:has([data-pick-date=startDate][aria-expanded=true]) .filter-calendar { inset-inline: 0 auto; margin-inline: 0 auto; }
+.calendar-heading, .calendar-actions { display: flex; align-items: center; gap: 4px; }
+.calendar-heading { margin-bottom: 8px; }
+.calendar-heading strong { font-size: 15px; font-weight: 600; }
+.calendar-heading [data-date-label] { margin-inline: 4px auto; font-size: 12px; color: var(--muted); }
+.calendar-heading button { height: 32px; }
+.calendar-heading [data-month-step="-1"] span { transform: rotate(135deg); }
+.calendar-heading [data-month-step="1"] span { transform: rotate(-45deg); }
+.calendar-week, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; }
+.calendar-week { padding-bottom: 5px; color: var(--muted); font-size: 11px; }
+.calendar-days button {
+  position: relative; height: 34px; padding: 0; border-radius: 4px; background: transparent; color: var(--text);
+  font: 400 13px/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+.calendar-days [data-in-range] { background: var(--accent-soft); border-radius: 0; }
+.calendar-days [data-endpoint] { color: var(--bg); background: var(--accent); font-weight: 600; }
+.calendar-days [aria-current=date]::after {
+  content: ''; position: absolute; bottom: 3px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: currentColor;
+}
+.calendar-actions { justify-content: space-between; margin-top: 8px; padding-top: 5px; border-top: 1px solid var(--line); }
+.calendar-actions button { min-height: 32px; padding: 4px 6px; border-radius: 4px; color: var(--accent); background: transparent; font-size: 13px; }
+.filter-popup button:focus-visible { outline-offset: -2px; }
+@media (hover: hover) {
+  .comment-filters button:hover, .filter-date-part button:hover { color: var(--text); }
+  .filter-control:hover:enabled, .filter-date-part:hover, .filter-keyword .filter-control:hover { border-color: var(--muted); }
+  .filter-article-options button:hover:enabled, .calendar-heading button:hover:enabled, .calendar-actions button:hover:enabled,
+  .calendar-days button:not([data-endpoint]):hover:enabled { background: var(--surface); }
+}
+@media (pointer: coarse) {
+  .comment-category-row button, .comment-filters button, .filter-actions button, .filter-article-options button,
+  .filter-control, .filter-date-part { min-height: 44px; }
+  .filter-date-part button { width: 40px; }
+  .calendar-days button { height: 38px; }
+}
+@media (max-width: 660px) {
+  .comment-admin { margin-block: 30px 44px; }
+  .comment-admin-heading { flex-direction: column; gap: 4px; }
+  .comment-admin-heading h1 { margin-bottom: 6px; }
+  .comment-filters { gap: 2px; }
+  .comment-filters button { padding-inline: 10px; }
+  .comment-admin-search {
+    grid-template-columns: minmax(0, 1fr); grid-template-areas: "categories" "article" "dates" "keyword" "actions";
+    gap: 12px; padding: 0 14px 14px; margin-top: 14px;
+  }
+  .comment-category-row { display: grid; gap: 3px; padding-block: 10px; }
+  .comment-category-row .category-filters button { padding-inline: 9px; }
+  .filter-actions { justify-content: flex-end; }
+  .filter-control input, .filter-date-part input { font-size: 16px; }
+  .filter-popup { position: static; width: 100%; margin-top: 6px; box-shadow: none; }
+  .filter-calendar { max-width: 22rem; margin-inline-start: auto; }
+}
+@media (max-width: 440px) {
+  .comment-category-row .category-filters {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 91px), 1fr)); gap: 3px;
+  }
+  .comment-category-row .category-filters button { padding-inline: 0; }
+}
+@media (max-width: 370px) {
+  .filter-date-range { grid-template-columns: minmax(0, 1fr); }
+  .filter-range-dash { display: none; }
+}

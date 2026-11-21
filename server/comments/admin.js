@@ -39,15 +39,31 @@ function timeBound(params, name) {
   return time;
 }
 
-async function adminList(db, params) {
+async function adminList(context, params) {
+  const db = context.env.COMMENTS_DB;
   const filter = params.get('filter') || 'tasks';
   if (!Object.hasOwn(filters, filter)) throw new CommentError(400, '分类无效。');
+  const category = params.get('category');
+  const includeArticles = params.get('include') === 'articles';
   const article = field(params.get('article'), '文章', 300, true);
   const keyword = field(params.get('q'), '留言关键词', 2000, true);
   const from = timeBound(params, 'from'), until = timeBound(params, 'until');
   if (from !== null && until !== null && from >= until) throw new CommentError(400, '结束日期不能早于开始日期。');
 
   const conditions = [filters[filter]], values = [];
+  let categories;
+  if (category || includeArticles) {
+    const url = new URL('/comment-article-categories.json', context.request.url);
+    const response = await context.env.ASSETS.fetch(url.href);
+    if (!response.ok || !response.headers.get('Content-Type')?.includes('application/json'))
+      throw new CommentError(503, '文章分类暂时无法加载，请重试。');
+    categories = await response.json();
+  }
+  if (category) {
+    const articles = Object.keys(categories).filter(id => categories[id] === category);
+    conditions.push('c.article IN (SELECT value FROM json_each(?))');
+    values.push(JSON.stringify(articles));
+  }
   if (article) { conditions.push('c.article=?'); values.push(article); }
   if (from !== null) { conditions.push('c.created_at>=?'); values.push(from); }
   if (until !== null) { conditions.push('c.created_at<?'); values.push(until); }
@@ -56,7 +72,7 @@ async function adminList(db, params) {
   const { results } = await db.prepare(`${selectComment} WHERE ${conditions.join(' AND ')} AND (c.created_at,c.id)<(?,?)
     ORDER BY c.created_at DESC,c.id DESC LIMIT 21
   `).bind(...values, time, cursor).all();
-  if (params.get('include') === 'articles') {
+  if (includeArticles) {
     const { results: articles } = await db.prepare(`
       SELECT article,title FROM (
         SELECT article,title,created_at, ROW_NUMBER() OVER (
@@ -64,14 +80,16 @@ async function adminList(db, params) {
         ) AS position FROM comments
       ) WHERE position=1 ORDER BY created_at DESC,article
     `).all();
-    return json({ ...page(results), articles });
+    return json({ ...page(results), articles: articles.map(entry => ({
+      ...entry, category: Object.hasOwn(categories, entry.article) ? categories[entry.article] : null,
+    })) });
   }
   return json(page(results));
 }
 
 export async function adminApi(context, path) {
   const { request, env } = context, db = env.COMMENTS_DB;
-  if (!path && request.method === 'GET') return adminList(db, new URL(request.url).searchParams);
+  if (!path && request.method === 'GET') return adminList(context, new URL(request.url).searchParams);
   const [rawId, action, extra] = path.split('/');
   const id = identifier(rawId);
   if (extra || !action) throw new CommentError(404, '接口不存在。');

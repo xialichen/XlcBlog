@@ -1,0 +1,10 @@
+---
+import type { CollectionEntry } from 'astro:content';
+interface Props { posts: CollectionEntry<'posts'>[]; showTotal?: boolean; }
+const { posts, showTotal = false } = Astro.props;
+const categories = [...new Set(posts.map(post => post.data.category))];
+---
+<div class="category-filters" role="group" aria-label="按文章类型筛选">
+  <button type="button" data-post-category="" aria-pressed="true">全部{showTotal && <span>{posts.length}</span>}</button>
+  {categories.map(category => <button type="button" data-post-category={category} aria-pressed="false">{category}</button>)}
+</div>

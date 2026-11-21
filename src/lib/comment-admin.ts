@@ -2,24 +2,17 @@ import {
   action, commentCard, commentTime, confirmComment, el, errorMessage, feedbackReasons, notice, requestJson, showNotice,
   type CommentRow, type Page,
 } from './comment-view';
+import { mountArticlePicker, type ArticleOption } from './comment-filter-controls';
+import { localMidnight, mountCommentCalendar } from './comment-calendar';
 
 interface AdminRow extends CommentRow { article: string; title: string; reports: number; }
-type AdminPage = Page<AdminRow> & { articles?: Pick<AdminRow, 'article' | 'title'>[] };
+type AdminPage = Page<AdminRow> & { articles?: ArticleOption[] };
 interface Report { reason: string; detail: string; created_at: number; }
 type Operation = 'publish' | 'hide' | 'restore' | 'resolve' | 'reply';
 const api = '/admin/comments/api';
 const emptyMessages: Record<string, string> = {
   tasks: '目前没有待处理的留言或反馈。', published: '目前没有公开的留言。', hidden: '目前没有隐藏的留言。', all: '目前没有留言。',
 };
-
-function localMidnight(value: string, dayOffset = 0) {
-  // 用本地日历换日，夏令时切换时也以次日零点为结束边界。
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(0);
-  date.setHours(0, 0, 0, 0);
-  date.setFullYear(year, month - 1, day + dayOffset);
-  return String(date.getTime());
-}
 
 function feedbackDetails(row: AdminRow, resolve: () => void) {
   const details = el('details', '', 'comment-reports');
@@ -63,12 +56,15 @@ export function mountAdmin(root: HTMLElement) {
   const more = root.querySelector<HTMLButtonElement>('[data-more]')!;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-filter]')];
   const search = root.querySelector<HTMLFormElement>('[data-comment-search]')!;
-  const article = search.elements.namedItem('article') as HTMLSelectElement;
+  const categories = [...search.querySelectorAll<HTMLButtonElement>('[data-post-category]')];
+  const picker = mountArticlePicker(search.querySelector<HTMLElement>('[data-article-picker]')!);
+  const validateDates = mountCommentCalendar(search);
+  const article = search.elements.namedItem('article') as HTMLInputElement;
   const keyword = search.elements.namedItem('q') as HTMLInputElement;
   const startDate = search.elements.namedItem('startDate') as HTMLInputElement;
   const endDate = search.elements.namedItem('endDate') as HTMLInputElement;
   let applied = new URLSearchParams();
-  let filter = 'tasks', next: string | null = null, version = 0;
+  let filter = 'tasks', category = '', next: string | null = null, version = 0;
 
   function updateListStatus() {
     const count = list.querySelectorAll('[data-comment-id]').length;
@@ -163,22 +159,11 @@ export function mountAdmin(root: HTMLElement) {
     try {
       const params = new URLSearchParams(applied);
       params.set('filter', filter);
-      if (article.disabled) params.set('include', 'articles');
+      if (!picker.ready) params.set('include', 'articles');
       if (append && next) params.set('before', next);
       const data = await requestJson<AdminPage>(api + '?' + params);
       if (active !== version) return;
-      if (data.articles && article.disabled) {
-        const titles = new Set<string>(), duplicates = new Set<string>();
-        for (const entry of data.articles) {
-          if (titles.has(entry.title)) duplicates.add(entry.title);
-          titles.add(entry.title);
-        }
-        for (const entry of data.articles) {
-          const label = duplicates.has(entry.title) ? `${entry.title}（${entry.article}）` : entry.title;
-          article.add(new Option(label, entry.article));
-        }
-        article.disabled = false;
-      }
+      if (data.articles) picker.setArticles(data.articles);
       if (!append) list.replaceChildren();
       list.append(...data.items.map(card));
       next = data.next; more.hidden = !next; more.textContent = '加载更多';
@@ -195,22 +180,32 @@ export function mountAdmin(root: HTMLElement) {
   }
 
   function apply(params: URLSearchParams) {
+    params.sort();
     if (params.toString() === applied.toString()) return;
     applied = params;
     restartList();
   }
 
-  function validateDates() {
-    endDate.min = startDate.value;
-    endDate.setCustomValidity(endDate.validity.rangeUnderflow ? '结束日期不能早于开始日期。' : '');
+  function setCategory(value: string) {
+    category = value;
+    categories.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.postCategory === value)));
+    picker.reset(value);
   }
-  startDate.addEventListener('input', validateDates);
-  endDate.addEventListener('input', validateDates);
+  categories.forEach(button => button.addEventListener('click', () => {
+    const value = button.dataset.postCategory!;
+    if (value === category) return;
+    setCategory(value);
+    const params = new URLSearchParams(applied);
+    params.delete('article');
+    if (value) params.set('category', value); else params.delete('category');
+    apply(params);
+  }));
   search.addEventListener('submit', event => {
     event.preventDefault();
     validateDates();
     if (!search.reportValidity()) return;
     const params = new URLSearchParams();
+    if (category) params.set('category', category);
     if (article.value) params.set('article', article.value);
     const text = keyword.value.trim();
     if (text) params.set('q', text);
@@ -219,7 +214,7 @@ export function mountAdmin(root: HTMLElement) {
     apply(params);
   });
   search.addEventListener('reset', () => {
-    endDate.min = ''; endDate.setCustomValidity('');
+    setCategory('');
     apply(new URLSearchParams());
   });
   tabs.forEach(tab => tab.addEventListener('click', () => {
