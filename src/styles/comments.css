@@ -16,13 +16,13 @@
   background: color-mix(in srgb, var(--surface) 52%, var(--bg));
 }
 .comment-field { display: grid; min-width: 0; gap: 6px; font-size: 14px; font-weight: 500; }
-.comment-field small { margin-inline-start: 4px; color: var(--muted); font-size: 12px; font-weight: 400; }
-.comment-field input, .comment-field textarea {
+.comment-field small, .comment-date-range small { margin-inline-start: 4px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.comment-field input, .comment-field textarea, .comment-field select {
   width: 100%; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px;
   color: var(--text); background: var(--bg); font: 400 15px/1.6 var(--sans);
 }
 .comment-field textarea { resize: vertical; min-height: 4.25em; }
-.comment-field :is(input, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.comment-field :is(input, textarea, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .comment-nickname { grid-template-columns: max-content minmax(0, 14rem); align-items: center; gap: 12px; }
 .comment-compose-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
 .comment-verification { min-width: 0; }
@@ -109,6 +109,17 @@
   background: transparent; color: var(--muted); font: 500 14px/1.5 var(--sans);
 }
 .comment-filters button[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+.comment-admin-search {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px 20px;
+  padding-block: 18px; border-bottom: 1px solid var(--line);
+}
+.comment-admin-search :is(input, select) { min-height: 44px; }
+.comment-date-range { min-width: 0; margin: 0; padding: 0; border: 0; }
+.comment-date-range legend { margin-bottom: 6px; padding: 0; font-size: 14px; font-weight: 500; }
+.comment-date-range > div { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.comment-date-range > div > span { color: var(--muted); font-size: 13px; }
+.comment-date-range input { padding-inline: 8px; }
+.comment-admin-search .comment-actions { justify-content: flex-end; }
 .comment-admin > .comment-notice:not(:empty) { margin-block: 16px; }
 .comment-admin .comment-list > :first-child { border-top: 0; }
 .comment-source { display: inline-block; margin-bottom: 6px; font-size: 13px; text-decoration-color: var(--line); }
@@ -136,11 +147,17 @@
   .comment-action, .comment-primary, .comment-secondary, .comment-danger, .comment-reasons label, .comment-filters button { min-height: 44px; }
   .comment-action { min-width: 44px; }
 }
+@media (max-width: 760px) {
+  .comment-admin-search { grid-template-columns: minmax(0, 1fr); }
+  .comment-admin-search .comment-actions { justify-content: flex-start; }
+}
 @media (max-width: 580px) {
   .comment-compose-footer { grid-template-columns: minmax(0, 1fr); }
   .comment-compose-footer > button { justify-self: end; }
   .comment-header { align-items: baseline; }
   .comment-admin { margin-block: 30px 44px; }
+  .comment-filters { gap: 4px; flex-wrap: wrap; }
+  .comment-filters button { padding-inline: 8px; }
   .comment-dialog { max-height: calc(100dvh - 16px); }
 }
 @media (max-width: 380px) {

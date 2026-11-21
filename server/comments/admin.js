@@ -21,6 +21,7 @@ export async function verifyOwner(request, env) {
 }
 
 const filters = {
+  all: '1',
   tasks: "(c.state='pending' OR EXISTS(SELECT 1 FROM feedback f WHERE f.comment_id=c.id AND f.resolved_at IS NULL))",
   published: "c.state='published'",
   hidden: "c.state='hidden'",
@@ -30,19 +31,47 @@ const selectComment = `SELECT c.id,c.article,c.title,c.state,c.nickname,c.body,c
   (SELECT COUNT(*) FROM feedback f WHERE f.comment_id=c.id AND f.resolved_at IS NULL) AS reports
   FROM comments c`;
 
-async function adminList(db, url) {
-  const filter = url.searchParams.get('filter') || 'tasks';
+function timeBound(params, name) {
+  const value = params.get(name);
+  if (!value) return null;
+  const time = Number(value);
+  if (!/^-?\d{1,16}$/.test(value) || !Number.isSafeInteger(time)) throw new CommentError(400, '留言日期无效。');
+  return time;
+}
+
+async function adminList(db, params) {
+  const filter = params.get('filter') || 'tasks';
   if (!Object.hasOwn(filters, filter)) throw new CommentError(400, '分类无效。');
-  const [time, cursor] = pageCursor(url.searchParams.get('before'));
-  const { results } = await db.prepare(`${selectComment} WHERE ${filters[filter]} AND (c.created_at,c.id)<(?,?)
+  const article = field(params.get('article'), '文章', 300, true);
+  const keyword = field(params.get('q'), '留言关键词', 2000, true);
+  const from = timeBound(params, 'from'), until = timeBound(params, 'until');
+  if (from !== null && until !== null && from >= until) throw new CommentError(400, '结束日期不能早于开始日期。');
+
+  const conditions = [filters[filter]], values = [];
+  if (article) { conditions.push('c.article=?'); values.push(article); }
+  if (from !== null) { conditions.push('c.created_at>=?'); values.push(from); }
+  if (until !== null) { conditions.push('c.created_at<?'); values.push(until); }
+  if (keyword) { conditions.push('instr(lower(c.body), lower(?)) > 0'); values.push(keyword); }
+  const [time, cursor] = pageCursor(params.get('before'));
+  const { results } = await db.prepare(`${selectComment} WHERE ${conditions.join(' AND ')} AND (c.created_at,c.id)<(?,?)
     ORDER BY c.created_at DESC,c.id DESC LIMIT 21
-  `).bind(time, cursor).all();
+  `).bind(...values, time, cursor).all();
+  if (params.get('include') === 'articles') {
+    const { results: articles } = await db.prepare(`
+      SELECT article,title FROM (
+        SELECT article,title,created_at, ROW_NUMBER() OVER (
+          PARTITION BY article ORDER BY created_at DESC,id DESC
+        ) AS position FROM comments
+      ) WHERE position=1 ORDER BY created_at DESC,article
+    `).all();
+    return json({ ...page(results), articles });
+  }
   return json(page(results));
 }
 
 export async function adminApi(context, path) {
   const { request, env } = context, db = env.COMMENTS_DB;
-  if (!path && request.method === 'GET') return adminList(db, new URL(request.url));
+  if (!path && request.method === 'GET') return adminList(db, new URL(request.url).searchParams);
   const [rawId, action, extra] = path.split('/');
   const id = identifier(rawId);
   if (extra || !action) throw new CommentError(404, '接口不存在。');

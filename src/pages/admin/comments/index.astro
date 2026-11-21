@@ -9,7 +9,28 @@ import '../../../styles/comments.css';
       <button type="button" data-filter="tasks" aria-pressed="true">待处理</button>
       <button type="button" data-filter="published" aria-pressed="false">已公开</button>
       <button type="button" data-filter="hidden" aria-pressed="false">已隐藏</button>
+      <button type="button" data-filter="all" aria-pressed="false">全部留言</button>
     </div>
+    <form data-comment-search class="comment-admin-search" role="search" aria-label="筛选留言">
+      <label class="comment-field">所属文章
+        <select name="article" disabled><option value="">全部文章</option></select>
+      </label>
+      <label class="comment-field">留言关键词
+        <input type="search" name="q" maxlength="2000" placeholder="搜索留言正文" />
+      </label>
+      <fieldset class="comment-date-range">
+        <legend>留言日期 <small>本地时间</small></legend>
+        <div>
+          <label class="comment-field"><span class="sr-only">开始日期</span><input type="date" name="startDate" /></label>
+          <span aria-hidden="true">至</span>
+          <label class="comment-field"><span class="sr-only">结束日期</span><input type="date" name="endDate" /></label>
+        </div>
+      </fieldset>
+      <div class="comment-actions">
+        <button class="comment-primary" type="submit">应用筛选</button>
+        <button class="comment-secondary" type="reset">清除筛选</button>
+      </div>
+    </form>
     <p data-list-status class="comment-notice" role="status"></p>
     <ol class="comment-list" aria-label="管理留言"></ol>
     <button type="button" class="comment-secondary" data-more hidden>加载更多</button>

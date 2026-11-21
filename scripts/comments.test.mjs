@@ -36,7 +36,7 @@ async function fixture(t) {
   const env = {
     COMMENTS_DB: binding, COMMENT_HOSTS: 'comments.example', COMMENT_RATE_SECRET: 'test-rate',
     TURNSTILE_SECRET: 'test-captcha', TURNSTILE_SITEKEY: 'test-site',
-    ACCESS_ISSUER: 'https://fixture.cloudflareaccess.com', ACCESS_AUD: 'comment-admin-test',
+    ACCESS_ISSUER: `https://${crypto.randomUUID()}.cloudflareaccess.com`, ACCESS_AUD: 'comment-admin-test',
     OWNER_EMAIL: email, MAIL_FROM: 'comments@example.test', ADMIN_URL: origin + '/admin/comments/',
     MAIL: { send: async message => sent.push(message) },
     ASSETS: { fetch(url) {
@@ -66,6 +66,13 @@ async function fixture(t) {
   const submit = (post, body, id = crypto.randomUUID(), other = {}) =>
     call('/api/comments', { post, body, id, token: 'comment', ...other }, owner);
   return { env, call, submit, sql, sent, owner, admin };
+}
+
+function insertComment(sql, { article = 'alpha', title = article, body = '一条留言', state = 'published', time }) {
+  const id = crypto.randomUUID();
+  sql.prepare(`INSERT INTO comments(id,article,title,nickname,body,owner_hash,fingerprint,state,created_at)
+    VALUES(?,?,?,'游客',?,'owner','fingerprint',?,?)`).run(id, article, title, body, state, time);
+  return id;
 }
 
 test('发表、审核、反馈、回复和撤回经实际路由保持一致', async t => {
@@ -131,6 +138,56 @@ test('反馈接口只接收通过反馈表单验证的提交', async t => {
   assert.equal((await call(path, { ...data, token: 'comment' })).status, 403);
   assert.equal(sql.prepare('SELECT count(*) n FROM feedback').get().n, 0);
   assert.equal((await call(path, { ...data, token: 'feedback' })).status, 200);
+});
+
+test('管理页组合筛选文章、留言日期和正文，并可跨状态检索历史留言', async t => {
+  const { call, sql, admin } = await fixture(t);
+  const from = Date.parse('2026-11-21T00:00:00+08:00'), until = Date.parse('2026-11-22T00:00:00+08:00');
+  const body = '进度 100%_Qt';
+  const earlier = insertComment(sql, { time: from - 1, body, title: '旧标题' });
+  const first = insertComment(sql, { time: from, body, title: '旧标题' });
+  const pending = insertComment(sql, { time: from + 1, body, state: 'pending' });
+  const hidden = insertComment(sql, { time: until - 1, body, state: 'hidden' });
+  const tomorrow = insertComment(sql, { time: until, body, title: '新标题' });
+  insertComment(sql, { time: from, body, article: 'beta', title: '另一篇文章' });
+  insertComment(sql, { time: from + 2, body: '进度 100xxQt' });
+  sql.prepare("INSERT INTO feedback(id,comment_id,reason,detail,created_at) VALUES(?,?,'other','',?)")
+    .run(crypto.randomUUID(), first, from);
+
+  async function search(params) {
+    const response = await call('/admin/comments/api?' + new URLSearchParams(params), undefined, admin);
+    assert.equal(response.status, 200);
+    return response.data;
+  }
+  const criteria = { article: 'alpha', from, until, q: '  进度 100%_qt  ' };
+  const results = await search({ ...criteria, filter: 'all', include: 'articles' });
+  assert.deepEqual(results.items.map(row => row.id), [hidden, pending, first]);
+  assert.deepEqual(results.articles, [{ article: 'alpha', title: '新标题' }, { article: 'beta', title: '另一篇文章' }]);
+  assert.deepEqual((await search({ ...criteria, filter: 'tasks' })).items.map(row => row.id), [pending, first]);
+  assert.deepEqual((await search({ ...criteria, filter: 'hidden' })).items.map(row => row.id), [hidden]);
+  assert.deepEqual((await search({ ...criteria, filter: 'published' })).items.map(row => row.id), [first]);
+  assert.deepEqual((await search({ article: 'alpha', filter: 'all', until: from })).items.map(row => row.id), [earlier]);
+  assert.deepEqual((await search({ article: 'alpha', filter: 'all', from: until })).items.map(row => row.id), [tomorrow]);
+  assert.deepEqual((await search({ q: '新标题', filter: 'all' })).items, []);
+  assert.equal((await search({ filter: 'published' })).articles, undefined);
+  for (const invalid of [{ from: '非日期' }, { until: '1.5' }, { from: until, until: from }]) {
+    assert.equal((await call('/admin/comments/api?' + new URLSearchParams(invalid), undefined, admin)).status, 400);
+  }
+  assert.equal((await call('/admin/comments/api?filter=all&include=articles')).status, 403);
+});
+
+test('管理页先筛选再分页，相同时间的匹配留言不会重复或遗漏', async t => {
+  const { call, sql, admin } = await fixture(t);
+  const time = Date.now();
+  const ids = Array.from({ length: 23 }, () => insertComment(sql, { time, body: '报名截止日期' })).sort().reverse();
+  for (let i = 0; i < 25; i++) insertComment(sql, { time: time + i + 1, body: '补充说明' });
+  const base = '/admin/comments/api?filter=published&article=alpha&q=' + encodeURIComponent('截止');
+  const first = await call(base, undefined, admin);
+  assert.equal(first.data.items.length, 20);
+  assert.ok(first.data.next);
+  const second = await call(base + '&before=' + encodeURIComponent(first.data.next), undefined, admin);
+  assert.equal(second.data.next, null);
+  assert.deepEqual([...first.data.items, ...second.data.items].map(row => row.id), ids);
 });
 
 test('限频、文章白名单、分页和失败提交', async t => {
