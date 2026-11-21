@@ -6,9 +6,12 @@ import { attachTurnstile } from '../src/lib/comment-verification.ts';
 function formControls(action, width = 360) {
   const retry = Object.assign(new EventTarget(), { hidden: true });
   const submit = { disabled: true }, container = { hidden: true, clientWidth: width };
-  const elements = { '[data-verify-retry]': retry, '[type=submit]': submit, '[data-verification]': container };
+  const loading = { hidden: true };
+  const elements = {
+    '[data-verify-retry]': retry, '[type=submit]': submit, '[data-verification]': container, '[data-verify-loading]': loading,
+  };
   const check = attachTurnstile({ querySelector: selector => elements[selector] }, action);
-  return { ...check, retry, submit, container };
+  return { ...check, retry, submit, container, loading };
 }
 
 function widgetSdk() {
@@ -50,6 +53,8 @@ test('显示表单即显示原生验证框，每个表单只能使用自己的�
 
   await feedback.show('public-key');
   assert.equal(sdk.widgets[1].options.action, 'feedback');
+  assert.equal(sdk.widgets[1].options.appearance, 'always');
+  assert.equal(sdk.widgets[1].options.execution, 'render');
   assert.equal(sdk.widgets[1].options.size, 'compact');
   solve(widget, 'comment-token');
   assert.equal(comment.submit.disabled, false);
@@ -82,6 +87,7 @@ test('加载失败时可原地重试，共用脚本加载期间关闭的表单�
 
   comment.retry.dispatchEvent(new Event('click'));
   const opening = feedback.show('public-key');
+  assert.equal(feedback.loading.hidden, false);
   feedback.clear();
   assert.equal(scripts.length, 2);
   window.turnstile = sdk;
@@ -92,7 +98,14 @@ test('加载失败时可原地重试，共用脚本加载期间关闭的表单�
   assert.equal(sdk.widgets.length, 1);
   assert.equal(sdk.widgets[0].container, comment.container);
   assert.equal(feedback.container.hidden, true);
+  assert.equal(feedback.loading.hidden, true);
   assert.equal(feedback.submit.disabled, true);
+  await feedback.show('public-key');
+  assert.equal(feedback.container.hidden, false);
+  assert.equal(feedback.retry.hidden, true);
+  assert.equal(feedback.loading.hidden, true);
+  assert.equal(feedback.submit.disabled, true);
+  assert.equal(sdk.widgets.at(-1).options.action, 'feedback');
 });
 
 test('过期、超时或失败时锁定提交，可在原生框重新验证', async t => {

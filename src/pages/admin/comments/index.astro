@@ -5,14 +5,14 @@ import '../../../styles/comments.css';
 <BaseLayout title="评论管理">
   <section class="comment-admin" data-admin>
     <h1>评论管理</h1>
-    <div class="comment-actions" role="group" aria-label="留言分类">
-      <button class="comment-secondary" data-filter="tasks" aria-pressed="true">待处理</button>
-      <button class="comment-secondary" data-filter="published" aria-pressed="false">已公开</button>
-      <button class="comment-secondary" data-filter="hidden" aria-pressed="false">已隐藏</button>
+    <div class="comment-filters" role="group" aria-label="留言分类">
+      <button type="button" data-filter="tasks" aria-pressed="true">待处理</button>
+      <button type="button" data-filter="published" aria-pressed="false">已公开</button>
+      <button type="button" data-filter="hidden" aria-pressed="false">已隐藏</button>
     </div>
-    <p role="status"></p>
-    <ol class="comment-list"></ol>
-    <button class="comment-secondary" data-more hidden>加载更多</button>
+    <p data-list-status class="comment-notice" role="status"></p>
+    <ol class="comment-list" aria-label="管理留言"></ol>
+    <button type="button" class="comment-secondary" data-more hidden>加载更多</button>
   </section>
 </BaseLayout>
 <script>

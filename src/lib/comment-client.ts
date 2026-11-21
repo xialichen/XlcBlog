@@ -1,4 +1,7 @@
-import { action, commentCard, el, errorMessage, requestJson, type CommentRow, type Page } from './comment-view';
+import {
+  action, commentCard, commentPreview, confirmComment, el, errorMessage, notice, requestJson, showNotice,
+  type CommentRow, type Page,
+} from './comment-view';
 import { attachTurnstile } from './comment-verification';
 
 export function mountComments(root: HTMLElement) {
@@ -9,10 +12,15 @@ export function mountComments(root: HTMLElement) {
   const listStatus = root.querySelector<HTMLElement>('[data-list-status]')!;
   const list = root.querySelector<HTMLOListElement>('[data-comments-list]')!;
   const more = root.querySelector<HTMLButtonElement>('[data-more]')!;
-  const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
-  const reportForm = dialog.querySelector('form')!, reportStatus = reportForm.querySelector<HTMLElement>('[role=status]')!;
+  const dialog = root.querySelector<HTMLDialogElement>('[data-feedback]')!;
+  const reportForm = dialog.querySelector('form')!;
+  const reportStatus = reportForm.querySelector<HTMLElement>('[data-feedback-status]')!;
+  const preview = reportForm.querySelector<HTMLElement>('[data-feedback-preview]')!;
   const check = attachTurnstile(form, 'comment'), reportCheck = attachTurnstile(reportForm, 'feedback');
-  let sitekey = '', next: string | null = null, target = '', reportId = '', currentLoad = 0;
+  const reported = new Set<string>(), withdrawn = new Set<string>();
+  let sitekey = '', next: string | null = null, currentLoad = 0;
+  let lastSubmitted = '';
+  let report: { row: CommentRow; id: string } | undefined;
   let submission: { signature: string; id: string } | undefined;
 
   function owner(create = false) {
@@ -31,22 +39,59 @@ export function mountComments(root: HTMLElement) {
   function send(path: string, data: object, key?: string | null) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (key) headers['X-Comment-Key'] = key;
-    return requestJson<{ state?: string }>(path, { method: 'POST', headers, body: JSON.stringify(data) });
+    return requestJson<{ id?: string; state?: string }>(path, { method: 'POST', headers, body: JSON.stringify(data) });
   }
-  function showReport(id: string) {
-    target = id; reportId = crypto.randomUUID();
+  function showReport(row: CommentRow) {
+    report = { row, id: crypto.randomUUID() };
     reportForm.reset(); reportStatus.textContent = '';
+    preview.replaceChildren(commentPreview(row));
     dialog.showModal();
     void reportCheck.show(sitekey);
-    if (!sitekey) reportStatus.textContent = '反馈暂时不可用，请稍后重试。';
+    if (!sitekey) showNotice(reportStatus, '反馈暂时不可用，请稍后重试。', 'error');
   }
-  async function withdraw(id: string) {
-    if (!window.confirm('撤回这条留言？对应的站主回复也会移除。')) return;
+
+  function findItem(id: string) {
+    return list.querySelector<HTMLElement>('[data-comment-id="' + CSS.escape(id) + '"]');
+  }
+
+  async function withdraw(row: CommentRow) {
+    const confirmed = await confirmComment(row, '撤回这条留言？', '留言及其站主回复将被永久移除。', '确认撤回');
+    const item = findItem(row.id);
+    if (!confirmed || !item) return;
+    const note = item.querySelector<HTMLElement>('.comment-notice')!;
+    const buttons = item.querySelectorAll('button');
+    showNotice(note, '正在撤回…');
+    if (item.contains(document.activeElement)) note.focus({ preventScroll: true });
+    buttons.forEach(button => { button.disabled = true; });
     try {
-      await send('/api/comments/' + id + '/withdraw', { post }, owner());
-      status.textContent = '留言已撤回。';
-      await reload();
-    } catch (error) { status.textContent = errorMessage(error); }
+      await send('/api/comments/' + row.id + '/withdraw', { post }, owner());
+      withdrawn.add(row.id);
+      if (lastSubmitted === row.id) { status.textContent = ''; lastSubmitted = ''; }
+      const current = findItem(row.id);
+      if (current) {
+        const currentNote = current.querySelector<HTMLElement>('.comment-notice')!;
+        const focused = current.contains(document.activeElement);
+        current.replaceChildren(currentNote);
+        current.classList.add('comment-receipt');
+        showNotice(currentNote, '你的留言已撤回。', 'success');
+        if (focused) currentNote.focus({ preventScroll: true });
+      }
+    } catch (error) {
+      showNotice(findItem(row.id)?.querySelector('.comment-notice') || listStatus, errorMessage(error), 'error');
+      buttons.forEach(button => { button.disabled = false; });
+    }
+  }
+
+  function publicCard(row: CommentRow) {
+    const { item, header } = commentCard(row);
+    const actions = el('div', '', 'comment-actions comment-row-actions');
+    if (row.state === 'published') actions.append(action('反馈', () => showReport(row)));
+    if (row.mine) actions.append(action('撤回', () => { void withdraw(row); }));
+    header.append(actions);
+    const note = notice();
+    if (reported.has(row.id)) showNotice(note, '反馈已提交，站主会查看。', 'success');
+    item.append(note);
+    return item;
   }
   async function reload(append = false) {
     const version = ++currentLoad;
@@ -60,24 +105,19 @@ export function mountComments(root: HTMLElement) {
       });
       if (version !== currentLoad) return;
       if (!append) list.replaceChildren();
-      for (const row of data.items) {
-        const item = commentCard(row), buttons = el('div', '', 'comment-actions');
-        if (row.state === 'published') buttons.append(action('反馈', () => showReport(row.id)));
-        if (row.mine) buttons.append(action('撤回', () => { void withdraw(row.id); }));
-        item.append(buttons); list.append(item);
-      }
+      list.append(...data.items.filter(row => !withdrawn.has(row.id)).map(publicCard));
       next = data.next; more.hidden = !next; more.textContent = '加载更多';
-      listStatus.textContent = list.children.length ? '' : '还没有留言。';
+      showNotice(listStatus, list.children.length ? '' : '还没有留言。');
       const newKey = data.sitekey || '';
       if (newKey !== sitekey) {
         sitekey = newKey;
         void check.show(sitekey);
         if (dialog.open) void reportCheck.show(sitekey);
       }
-      if (!sitekey) status.textContent = '发表暂时不可用。';
+      if (!sitekey) showNotice(status, '发表暂时不可用。', 'error');
     } catch (error) {
       if (version !== currentLoad) return;
-      listStatus.textContent = errorMessage(error);
+      showNotice(listStatus, errorMessage(error), 'error');
       more.textContent = '重试'; more.hidden = false;
     } finally { if (version === currentLoad) more.disabled = false; }
   }
@@ -89,31 +129,47 @@ export function mountComments(root: HTMLElement) {
     const nickname = String(new FormData(form).get('nickname') || '');
     const signature = JSON.stringify([nickname, body.value]);
     if (submission?.signature !== signature) submission = { signature, id: crypto.randomUUID() };
+    lastSubmitted = '';
+    showNotice(status, '正在发表…');
     try {
       const result = await send('/api/comments', { id: submission.id, post, nickname, body: body.value, token }, owner(true));
-      status.textContent = result.state === 'pending' ? '留言已收到，待审核。' : '留言已发表。';
+      lastSubmitted = result.id || '';
+      const message = result.state === 'pending' ? '留言已收到，正在等待审核。'
+        : result.state === 'hidden' ? '这条留言已被隐藏。' : '留言已发表。';
+      showNotice(status, message, 'success');
       if (signature === JSON.stringify([String(new FormData(form).get('nickname') || ''), body.value])) body.value = '';
       submission = undefined;
       await reload();
-    } catch (error) { status.textContent = errorMessage(error); }
+      const item = lastSubmitted && findItem(lastSubmitted);
+      if (item && result.id === lastSubmitted) {
+        const link = el('a', '查看留言');
+        link.href = '#' + item.id; status.append(' ', link);
+      }
+    } catch (error) { showNotice(status, errorMessage(error), 'error'); }
     finally { void check.show(sitekey); }
   });
   dialog.querySelector('[data-cancel]')!.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => { if (!dialog.open) reportCheck.clear(); });
+  dialog.addEventListener('close', () => {
+    if (!dialog.open) { report = undefined; reportCheck.clear(); }
+  });
   reportForm.addEventListener('submit', async event => {
     event.preventDefault();
+    const active = report;
+    if (!dialog.open || !active) return;
     const token = reportCheck.takeToken();
     if (!token) return;
-    const id = reportId;
+    showNotice(reportStatus, '正在提交反馈…');
     try {
-      await send('/api/comments/' + target + '/feedback', {
-        ...Object.fromEntries(new FormData(reportForm)), id, token,
+      await send('/api/comments/' + active.row.id + '/feedback', {
+        ...Object.fromEntries(new FormData(reportForm)), id: active.id, token,
       });
-      if (id === reportId && dialog.open) dialog.close();
-      status.textContent = '反馈已收到，站主会集中处理。';
+      reported.add(active.row.id);
+      if (active === report && dialog.open) dialog.close();
+      if (!withdrawn.has(active.row.id))
+        showNotice(findItem(active.row.id)?.querySelector('.comment-notice') || listStatus, '反馈已提交，站主会查看。', 'success');
     } catch (error) {
-      if (id === reportId && dialog.open) {
-        reportStatus.textContent = errorMessage(error);
+      if (active === report && dialog.open) {
+        showNotice(reportStatus, errorMessage(error), 'error');
         void reportCheck.show(sitekey);
       }
     }

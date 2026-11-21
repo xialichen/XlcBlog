@@ -80,7 +80,9 @@ test('发表、审核、反馈、回复和撤回经实际路由保持一致', as
   assert.equal(pending.mine, 1);
   const base = '/admin/comments/api/' + first.data.id + '/';
   assert.equal((await call(base + 'reply', { body: '谢谢补充' })).status, 403);
-  assert.equal((await call(base + 'reply', { body: '谢谢补充' }, admin)).status, 200);
+  const saved = await call(base + 'reply', { body: '谢谢补充' }, admin);
+  assert.equal(saved.status, 200);
+  assert.equal(saved.data.item.reply, '谢谢补充');
   const publicRow = (await call('/api/comments?post=alpha')).data.items[0];
   assert.equal(publicRow.reply, '谢谢补充');
   assert.equal(publicRow.nickname, '游客');
@@ -99,9 +101,15 @@ test('发表、审核、反馈、回复和撤回经实际路由保持一致', as
   assert.equal(sent.length, 1);
   assert.ok(sent[0].text.includes('有新反馈的留言 1 条'));
   assert.ok(!sent[0].text.includes('请核实'));
-  assert.equal((await call(base + 'hide', {}, admin)).status, 200);
+  const hidden = await call(base + 'hide', {}, admin);
+  assert.equal(hidden.status, 200);
+  assert.equal(hidden.data.item.state, 'hidden');
+  assert.equal(hidden.data.item.reports, 0);
   assert.equal((await call('/api/comments?post=alpha')).data.items.length, 0);
-  assert.equal((await call(base + 'restore', {}, admin)).status, 200);
+  assert.equal((await call(base + 'restore', {}, admin)).data.item.state, 'published');
+  const pendingPath = '/admin/comments/api/' + pending.id + '/';
+  assert.equal((await call(pendingPath + 'hide', {}, admin)).data.item.state, 'hidden');
+  assert.equal((await call(pendingPath + 'restore', {}, admin)).data.item.state, 'pending');
   assert.equal((await call('/admin/comments/api/' + pending.id + '/publish', {}, admin)).status, 200);
   const withdraw = '/api/comments/' + first.data.id + '/withdraw';
   assert.equal((await call(withdraw, { post: 'alpha' }, { 'X-Comment-Key': 'cd'.repeat(32) })).status, 404);
@@ -111,6 +119,18 @@ test('发表、审核、反馈、回复和撤回经实际路由保持一致', as
   await call('/admin/comments/api/' + pending.id + '/hide', {}, admin);
   await runDigest(env, now + 31 * 86_400_000);
   assert.equal(sql.prepare('SELECT count(*) n FROM comments').get().n, 0);
+});
+
+test('反馈接口只接收通过反馈表单验证的提交', async t => {
+  const { call, submit, sql } = await fixture(t);
+  const comment = await submit('alpha', '可反馈的留言');
+  const path = '/api/comments/' + comment.data.id + '/feedback';
+  const data = { id: crypto.randomUUID(), reason: 'other', detail: '请核对' };
+  assert.equal((await call(path, data)).status, 400);
+  assert.equal((await call(path, { ...data, token: 'invalid' })).status, 403);
+  assert.equal((await call(path, { ...data, token: 'comment' })).status, 403);
+  assert.equal(sql.prepare('SELECT count(*) n FROM feedback').get().n, 0);
+  assert.equal((await call(path, { ...data, token: 'feedback' })).status, 200);
 });
 
 test('限频、文章白名单、分页和失败提交', async t => {

@@ -26,14 +26,15 @@ const filters = {
   hidden: "c.state='hidden'",
 };
 
+const selectComment = `SELECT c.id,c.article,c.title,c.state,c.nickname,c.body,c.created_at,c.reply,c.replied_at,
+  (SELECT COUNT(*) FROM feedback f WHERE f.comment_id=c.id AND f.resolved_at IS NULL) AS reports
+  FROM comments c`;
+
 async function adminList(db, url) {
   const filter = url.searchParams.get('filter') || 'tasks';
   if (!Object.hasOwn(filters, filter)) throw new CommentError(400, '分类无效。');
   const [time, cursor] = pageCursor(url.searchParams.get('before'));
-  const { results } = await db.prepare(`
-    SELECT c.id,c.article,c.title,c.state,c.nickname,c.body,c.created_at,c.reply,c.replied_at,
-      (SELECT COUNT(*) FROM feedback f WHERE f.comment_id=c.id AND f.resolved_at IS NULL) AS reports
-    FROM comments c WHERE ${filters[filter]} AND (c.created_at,c.id)<(?,?)
+  const { results } = await db.prepare(`${selectComment} WHERE ${filters[filter]} AND (c.created_at,c.id)<(?,?)
     ORDER BY c.created_at DESC,c.id DESC LIMIT 21
   `).bind(time, cursor).all();
   return json(page(results));
@@ -79,5 +80,6 @@ export async function adminApi(context, path) {
     default: throw new CommentError(404, '操作不存在。');
   }
   if (!result.meta.changes) throw new CommentError(409, '留言状态已变化，请刷新列表。');
-  return json({ ok: true });
+  const item = await db.prepare(selectComment + ' WHERE c.id=?').bind(id).first();
+  return json({ ok: true, item });
 }

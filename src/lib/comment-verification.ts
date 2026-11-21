@@ -25,6 +25,7 @@ export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feed
   const retry = form.querySelector<HTMLButtonElement>('[data-verify-retry]')!;
   const submit = form.querySelector<HTMLButtonElement>('[type=submit]')!;
   const container = form.querySelector<HTMLElement>('[data-verification]')!;
+  const loading = form.querySelector<HTMLElement>('[data-verify-loading]')!;
   let sitekey = '', generation = 0;
   let widget: string | undefined;
 
@@ -33,6 +34,7 @@ export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feed
     sitekey = '';
     submit.disabled = true;
     retry.hidden = true;
+    loading.hidden = true;
     if (widget !== undefined) window.turnstile?.remove(widget);
     widget = undefined;
     container.hidden = true;
@@ -46,6 +48,7 @@ export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feed
     clear();
     if (!key) return;
     sitekey = key;
+    loading.hidden = false;
     const version = generation;
     const lock = () => { if (version === generation) submit.disabled = true; };
     try {
@@ -53,7 +56,7 @@ export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feed
       if (version !== generation) return;
       container.hidden = false;
       const id = api.render(container, {
-        sitekey, action, theme: 'auto', appearance: 'always',
+        sitekey, action, theme: 'auto', appearance: 'always', execution: 'render',
         size: container.clientWidth < 300 ? 'compact' : 'normal',
         'refresh-expired': 'manual', 'refresh-timeout': 'manual', 'response-field': false,
         callback: (value: string) => {
@@ -63,12 +66,15 @@ export function attachTurnstile(form: HTMLFormElement, action: 'comment' | 'feed
         'expired-callback': lock, 'timeout-callback': lock, 'unsupported-callback': lock,
         'error-callback': () => { lock(); return true; },
       });
-      if (version === generation) widget = id;
-      else api.remove(id);
+      if (version === generation) {
+        widget = id;
+        loading.hidden = true;
+      } else api.remove(id);
     } catch {
       if (version !== generation) return;
       submit.disabled = true;
       container.hidden = true;
+      loading.hidden = true;
       retry.hidden = false;
     }
   }

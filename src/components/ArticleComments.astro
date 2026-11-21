@@ -1,33 +1,50 @@
 ---
 import '../styles/comments.css';
+import CommentVerification from './CommentVerification.astro';
+import { feedbackReasons } from '../lib/comment-view';
 interface Props { article: string; }
 const { article } = Astro.props;
 ---
 <section class="comments-panel" data-comments data-article={article} aria-labelledby="comments-title">
   <h2 id="comments-title">评论</h2>
-  <form data-compose class="comment-form">
-    <label>昵称 <span>（选填）</span><input name="nickname" maxlength="40" autocomplete="off" placeholder="游客" /></label>
-    <label>留言<textarea name="body" required maxlength="2000" rows="3"></textarea></label>
-    <div data-verification hidden></div>
-    <button type="button" class="comment-secondary" data-verify-retry hidden>验证框加载失败，点击重试</button>
-    <button type="submit" class="comment-primary" disabled>发表留言</button>
-    <p data-submit-status role="status"></p>
+  <form data-compose class="comment-form comment-composer">
+    <label class="comment-field comment-nickname">
+      <span>昵称 <small>选填</small></span>
+      <input name="nickname" maxlength="40" autocomplete="nickname" placeholder="游客" />
+    </label>
+    <label class="comment-field">留言<textarea name="body" required maxlength="2000" rows="3"></textarea></label>
+    <div class="comment-compose-footer">
+      <CommentVerification />
+      <button type="submit" class="comment-primary" disabled>发表留言</button>
+    </div>
+    <p data-submit-status class="comment-notice" role="status"></p>
   </form>
-  <p data-list-status role="status"></p>
-  <ol data-comments-list class="comment-list"></ol>
+  <h3 id="reader-comments" class="comment-list-heading">读者留言</h3>
+  <p data-list-status role="status" class="comment-notice"></p>
+  <ol data-comments-list class="comment-list" aria-labelledby="reader-comments"></ol>
   <button type="button" data-more class="comment-secondary" hidden>加载更多</button>
   <dialog data-feedback class="comment-dialog" aria-labelledby="feedback-title">
     <form class="comment-form">
-      <h3 id="feedback-title">留言反馈</h3>
-      <label>原因<select name="reason" required><option value="spam">广告刷屏</option><option value="abuse">攻击或隐私问题</option><option value="removal">申请移除自己的留言</option><option value="other">其他</option></select></label>
-      <label>补充说明 <span>（选填）</span><textarea name="detail" maxlength="500" rows="3"></textarea></label>
-      <div data-verification hidden></div>
-      <button type="button" class="comment-secondary" data-verify-retry hidden>验证框加载失败，点击重试</button>
-      <div class="comment-actions">
-        <button type="submit" class="comment-primary" disabled>提交反馈</button>
+      <h3 id="feedback-title">反馈这条留言</h3>
+      <div data-feedback-preview></div>
+      <fieldset class="comment-reasons">
+        <legend>反馈原因</legend>
+        <div>
+          {Object.entries(feedbackReasons).map(([value, label]) => (
+            <label><input type="radio" name="reason" value={value} required />{label}</label>
+          ))}
+        </div>
+      </fieldset>
+      <label class="comment-field">
+        <span>补充说明 <small>选填</small></span>
+        <textarea name="detail" maxlength="500" rows="2"></textarea>
+      </label>
+      <CommentVerification />
+      <p class="comment-notice" role="status" data-feedback-status></p>
+      <div class="comment-actions comment-dialog-actions">
         <button type="button" data-cancel class="comment-secondary">取消</button>
+        <button type="submit" class="comment-primary" disabled>提交反馈</button>
       </div>
-      <p role="status"></p>
     </form>
   </dialog>
   <noscript>请启用 JavaScript 查看和发表留言。</noscript>
