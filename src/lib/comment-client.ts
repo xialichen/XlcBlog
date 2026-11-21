@@ -1,53 +1,5 @@
 import { action, commentCard, el, errorMessage, requestJson, type CommentRow, type Page } from './comment-view';
-
-interface Turnstile {
-  render(target: HTMLElement, options: Record<string, unknown>): string;
-  reset(id: string): void;
-  remove(id: string): void;
-}
-declare global { interface Window { turnstile?: Turnstile } }
-let script: Promise<Turnstile> | undefined;
-function loadTurnstile() {
-  if (window.turnstile) return Promise.resolve(window.turnstile);
-  if (!script) script = new Promise<Turnstile>((resolve, reject) => {
-    const tag = document.createElement('script');
-    tag.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-    tag.async = true;
-    tag.onload = () => window.turnstile ? resolve(window.turnstile) : reject(new Error('人机验证加载失败，请重试。'));
-    tag.onerror = () => { tag.remove(); reject(new Error('人机验证加载失败，请重试。')); };
-    document.head.append(tag);
-  }).catch(error => { script = undefined; throw error; });
-  return script;
-}
-
-function verification(form: HTMLFormElement, name: string) {
-  const submit = form.querySelector<HTMLButtonElement>('[type=submit]')!;
-  let widget: string | undefined, token = '', generation = 0;
-  function set(value: string) { token = value; submit.disabled = !value; }
-  function close() {
-    generation++;
-    if (widget !== undefined) window.turnstile?.remove(widget);
-    widget = undefined;
-    set('');
-  }
-  return {
-    async open(sitekey: string) {
-      close();
-      const version = generation;
-      const api = await loadTurnstile();
-      if (version !== generation) return;
-      widget = api.render(form.querySelector<HTMLElement>('[data-verification]')!, {
-        sitekey, action: name, theme: 'auto', callback: (value: string) => set(value),
-        'expired-callback': () => set(''), 'error-callback': () => {
-          set(''); form.querySelector<HTMLElement>('[role=status]')!.textContent = '人机验证暂时不可用，请重试。';
-        },
-      });
-    },
-    token: () => token,
-    reset() { set(''); if (widget !== undefined) window.turnstile?.reset(widget); },
-    close,
-  };
-}
+import { manualVerification } from './comment-verification';
 
 export function mountComments(root: HTMLElement) {
   const post = root.dataset.article!, keyName = 'xlc.comments.owner.' + post;
@@ -59,7 +11,7 @@ export function mountComments(root: HTMLElement) {
   const more = root.querySelector<HTMLButtonElement>('[data-more]')!;
   const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
   const reportForm = dialog.querySelector('form')!, reportStatus = reportForm.querySelector<HTMLElement>('[role=status]')!;
-  const check = verification(form, 'comment'), reportCheck = verification(reportForm, 'feedback');
+  const check = manualVerification(form, 'comment'), reportCheck = manualVerification(reportForm, 'feedback');
   let sitekey = '', next: string | null = null, target = '', reportId = '', currentLoad = 0;
   let submission: { signature: string; id: string } | undefined;
 
@@ -85,8 +37,8 @@ export function mountComments(root: HTMLElement) {
     target = id; reportId = crypto.randomUUID();
     reportForm.reset(); reportStatus.textContent = '';
     dialog.showModal();
-    if (sitekey) void reportCheck.open(sitekey).catch(e => { reportStatus.textContent = errorMessage(e); });
-    else reportStatus.textContent = '反馈暂时不可用，请稍后重试。';
+    reportCheck.prepare(sitekey);
+    if (!sitekey) reportStatus.textContent = '反馈暂时不可用，请稍后重试。';
   }
   async function withdraw(id: string) {
     if (!window.confirm('撤回这条留言？对应的站主回复也会移除。')) return;
@@ -116,11 +68,13 @@ export function mountComments(root: HTMLElement) {
       }
       next = data.next; more.hidden = !next; more.textContent = '加载更多';
       listStatus.textContent = list.children.length ? '' : '还没有留言。';
-      if (data.sitekey && data.sitekey !== sitekey) {
-        sitekey = data.sitekey;
-        try { await check.open(sitekey); }
-        catch (error) { sitekey = ''; throw error; }
-      } else if (!data.sitekey) status.textContent = '发表暂时不可用。';
+      const newKey = data.sitekey || '';
+      if (newKey !== sitekey) {
+        sitekey = newKey;
+        check.prepare(sitekey);
+        if (dialog.open) reportCheck.prepare(sitekey);
+      }
+      if (!sitekey) status.textContent = '发表暂时不可用。';
     } catch (error) {
       if (version !== currentLoad) return;
       listStatus.textContent = errorMessage(error);
@@ -130,33 +84,39 @@ export function mountComments(root: HTMLElement) {
   more.addEventListener('click', () => { void reload(!!next && list.children.length > 0); });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!check.token()) return;
-    const button = form.querySelector<HTMLButtonElement>('[type=submit]')!;
-    button.disabled = true;
+    const token = check.takeToken();
+    if (!token) return;
     const nickname = String(new FormData(form).get('nickname') || '');
     const signature = JSON.stringify([nickname, body.value]);
     if (submission?.signature !== signature) submission = { signature, id: crypto.randomUUID() };
     try {
-      const result = await send('/api/comments', { id: submission.id, post, nickname, body: body.value, token: check.token() }, owner(true));
+      const result = await send('/api/comments', { id: submission.id, post, nickname, body: body.value, token }, owner(true));
       status.textContent = result.state === 'pending' ? '留言已收到，待审核。' : '留言已发表。';
       if (signature === JSON.stringify([String(new FormData(form).get('nickname') || ''), body.value])) body.value = '';
       submission = undefined;
       await reload();
     } catch (error) { status.textContent = errorMessage(error); }
-    finally { check.reset(); }
+    finally { check.prepare(sitekey); }
   });
   dialog.querySelector('[data-cancel]')!.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => reportCheck.close());
+  dialog.addEventListener('close', () => { if (!dialog.open) reportCheck.prepare(''); });
   reportForm.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!reportCheck.token()) return;
-    reportForm.querySelector<HTMLButtonElement>('[type=submit]')!.disabled = true;
+    const token = reportCheck.takeToken();
+    if (!token) return;
+    const id = reportId;
     try {
       await send('/api/comments/' + target + '/feedback', {
-        ...Object.fromEntries(new FormData(reportForm)), id: reportId, token: reportCheck.token(),
+        ...Object.fromEntries(new FormData(reportForm)), id, token,
       });
-      dialog.close(); status.textContent = '反馈已收到，站主会集中处理。';
-    } catch (error) { reportStatus.textContent = errorMessage(error); reportCheck.reset(); }
+      if (id === reportId && dialog.open) dialog.close();
+      status.textContent = '反馈已收到，站主会集中处理。';
+    } catch (error) {
+      if (id === reportId && dialog.open) {
+        reportStatus.textContent = errorMessage(error);
+        reportCheck.prepare(sitekey);
+      }
+    }
   });
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver(entries => {

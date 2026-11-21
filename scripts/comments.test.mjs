@@ -116,8 +116,10 @@ test('发表、审核、反馈、回复和撤回经实际路由保持一致', as
 test('限频、文章白名单、分页和失败提交', async t => {
   const { call, submit, sql, owner } = await fixture(t);
   assert.equal((await submit('sample', '测试')).status, 404);
+  assert.equal((await submit('alpha', '测试', undefined, { token: '' })).status, 400);
   assert.equal((await submit('alpha', '测试', undefined, { token: 'invalid' })).status, 403);
   assert.equal((await submit('alpha', '测试', undefined, { token: 'feedback' })).status, 403);
+  assert.equal(sql.prepare('SELECT count(*) n FROM comments').get().n, 0);
   const data = { post: 'alpha', body: '留言', token: 'comment' };
   for (let i = 0; i < 6; i++) {
     const result = await call('/api/comments', { ...data, id: crypto.randomUUID() }, { ...owner, 'CF-Connecting-IP': '198.51.100.1' });
