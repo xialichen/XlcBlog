@@ -8,10 +8,12 @@
     "build": "astro check && astro build",
     "preview": "astro preview --host 127.0.0.1",
     "check": "astro check",
+    "test": "node --test scripts/comments.test.mjs scripts/render-briefing-email.test.mjs",
     "email:render": "node scripts/render-briefing-email.mjs"
   },
   "dependencies": {
-    "astro": "7.3.5"
+    "astro": "7.3.5",
+    "jose": "6.2.18"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",

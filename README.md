@@ -102,7 +102,7 @@ npm run email:render -- examples/email/nansha-morning-2026-10-15.json
 
 以上设置位于 Cloudflare Pages 项目配置中。推送到 GitHub 的 `main` 分支会自动构建并发布；本地尚未提交、推送的修改不会上线。可在 Pages 的 Deployments 中检查构建日志及部署状态。
 
-网站为纯静态页面，不需要 Cloudflare 运行时适配器、数据库、R2 存储桶或腾讯云服务器。图片可放入 `public/`，随网站一起发布。
+文章由 Astro 静态生成。Cloudflare Pages Functions 只处理评论与站主管理路径。图片放在 `public/`，随网站一起发布。
 
 更换域名时，同时调整 Pages 的 Custom domains、Cloudflare DNS 和构建环境变量 `SITE_URL`，然后重新部署，使 canonical 和 Open Graph URL 使用新域名。
 
@@ -145,7 +145,15 @@ npm run email:render -- examples/email/nansha-morning-2026-10-15.json
 - 正文支持 Markdown 引用、列表、表格和代码高亮。
 - 提供跳转到正文、可见键盘焦点和减少动态效果支持。
 
-目前尚未接入评论、全文检索、RSS 或统计；生产环境使用 Cloudflare Pages 的 Git 自动部署。
+### 访客评论
+
+普通文章与早报在页尾按需加载评论，示例文章仅展示正文。游客可以在同一浏览器撤回自己的留言。「反馈」入口也受人机验证保护。站主通过 `/admin/comments/` 查看待审、反馈、公开和已隐藏的留言。
+
+Cloudflare Pages 的预览和生产环境分别绑定各自的 `COMMENTS_DB`。新库先执行 `deploy/comments/schema.sql`。Pages 环境还需要 `TURNSTILE_SITEKEY`、`TURNSTILE_SECRET`、`COMMENT_RATE_SECRET`、`COMMENT_HOSTS`（当前环境允许提交的主机名）、`ACCESS_ISSUER`、`ACCESS_AUD` 与 `OWNER_EMAIL`。管理页和同路径下的 API 使用只放行站主邮箱的 Cloudflare Access 应用。密钥和邮箱在平台中配置。
+
+独立的定时 Worker 使用 `deploy/comments/digest.js`，绑定同一环境的 `COMMENTS_DB`、仅限已验证站主邮箱的 `MAIL`、`OWNER_EMAIL`、`MAIL_FROM` 和 `ADMIN_URL`。每日任务汇总新增待办，并清理隐藏满 30 天的留言。访客撤回即时删除当前库的原文、回复与关联反馈。
+
+运行 `npm test` 验证评论和邮件逻辑（Node 22.13+ 或 24）。只部署 `dist/` 的静态服务器仍可正常阅读正文，互动功能需要 Pages Functions 与以上绑定。
 
 ## 搜索引擎站点地图
 

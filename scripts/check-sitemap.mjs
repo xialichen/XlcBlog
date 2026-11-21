@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const base = new URL(process.env.SITE_URL || 'https://1610161.xyz');
 const root = new URL('../dist/', import.meta.url);
+const rootPath = fileURLToPath(root);
 const xml = await readFile(new URL('sitemap.xml', root), 'utf8');
 assert.match(xml, /^<\?xml version="1.0" encoding="UTF-8"\?>/);
 assert.match(xml, /<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9">/);
@@ -17,12 +19,13 @@ async function walk(directory) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) await walk(path);
     else if (entry.name.endsWith('.html') && entry.name !== '404.html') {
-      const route = relative(root.pathname, path).split(sep).join('/').replace(/index\.html$/, '');
+      const route = relative(rootPath, path).split(sep).join('/').replace(/index\.html$/, '');
+      if (route.startsWith('admin/')) continue;
       expected.push(new URL(route, base).href);
     }
   }
 }
-await walk(root.pathname);
+await walk(rootPath);
 assert.deepEqual([...urls].sort(), expected.sort(), '地图必须与实际生成的公开 HTML 页面一致（排除404）');
 const robots = await readFile(new URL('robots.txt', root), 'utf8');
 assert.ok(robots.includes(`Sitemap: ${new URL('/sitemap.xml', base).href}`));

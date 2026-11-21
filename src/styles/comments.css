@@ -1,0 +1,35 @@
+.comments-panel, .comment-admin { max-width: 700px; }
+.comments-panel { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
+.comments-panel h2, .comment-admin h1 { font-family: var(--serif); }
+.comments-panel h2 { margin: 0 0 20px; font-size: 26px; }
+.comment-form { display: grid; gap: 12px; }
+.comment-form label { display: grid; gap: 5px; font-size: 14px; }
+.comment-form label span { display: contents; color: var(--muted); }
+.comment-form input, .comment-form textarea, .comment-form select, .comment-admin textarea {
+  box-sizing: border-box; width: 100%; padding: 9px 12px; border-radius: 4px;
+  color: var(--text); border: 1px solid var(--line); background: var(--bg); font: inherit;
+}
+.comment-form input { max-width: 22em; }
+.comment-form textarea, .comment-admin textarea { resize: vertical; min-height: 5em; }
+.comment-primary, .comment-secondary { width: fit-content; min-height: 40px; padding: 6px 14px; border-radius: 4px; font: inherit; }
+.comment-primary { background: var(--accent); color: var(--bg); }
+.comment-secondary { color: var(--accent); background: var(--surface); }
+.comments-panel button:disabled, .comment-admin button:disabled { opacity: .55; cursor: default; }
+.comments-panel [hidden], .comment-admin [hidden] { display: none; }
+.comments-panel [role=status], .comment-admin [role=status] { color: var(--muted); font-size: 14px; }
+.comments-panel [role=status]:empty, .comment-admin [role=status]:empty { margin: 0; }
+.comment-list { list-style: none; margin: 20px 0; padding: 0; }
+.comment-item { border-top: 1px solid var(--line); padding: 18px 0; overflow-wrap: anywhere; }
+.comment-meta, .comment-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.comment-meta time, .comment-state { font-size: 12px; color: var(--muted); }
+.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 12px; }
+.comment-text a, .comment-admin a { color: var(--accent); text-decoration: underline; }
+.comment-reply { margin: 12px 0; padding: 6px 14px; border-left: 2px solid var(--accent); background: var(--surface); }
+.comment-reply strong { font-size: 12px; }
+.comment-reply .comment-text { margin: 4px 0; }
+.comment-dialog { width: min(440px, calc(100% - 32px)); margin: auto; padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+.comment-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.comment-admin { margin: 48px auto 64px; }
+.comment-admin h1 { margin-bottom: 20px; }
+.comment-admin [aria-pressed=true] { color: var(--bg); background: var(--accent); }
+.comment-admin .comment-actions { margin: 8px 0; }

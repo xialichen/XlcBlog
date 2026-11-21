@@ -1,0 +1,33 @@
+---
+import '../styles/comments.css';
+interface Props { article: string; }
+const { article } = Astro.props;
+---
+<section class="comments-panel" data-comments data-article={article} aria-labelledby="comments-title">
+  <h2 id="comments-title">评论</h2>
+  <form data-compose class="comment-form">
+    <label>昵称 <span>（选填）</span><input name="nickname" maxlength="40" autocomplete="off" placeholder="游客" /></label>
+    <label>留言<textarea name="body" required maxlength="2000" rows="3"></textarea></label>
+    <div data-verification></div>
+    <button type="submit" class="comment-primary" disabled>发表留言</button>
+    <p data-submit-status role="status"></p>
+  </form>
+  <p data-list-status role="status"></p>
+  <ol data-comments-list class="comment-list"></ol>
+  <button type="button" data-more class="comment-secondary" hidden>加载更多</button>
+  <dialog data-feedback class="comment-dialog" aria-labelledby="feedback-title">
+    <form class="comment-form">
+      <h3 id="feedback-title">留言反馈</h3>
+      <label>原因<select name="reason" required><option value="spam">广告刷屏</option><option value="abuse">攻击或隐私问题</option><option value="removal">申请移除自己的留言</option><option value="other">其他</option></select></label>
+      <label>补充说明 <span>（选填）</span><textarea name="detail" maxlength="500" rows="3"></textarea></label>
+      <div data-verification></div>
+      <div class="comment-actions"><button type="submit" class="comment-primary" disabled>提交反馈</button><button type="button" data-cancel class="comment-secondary">取消</button></div>
+      <p role="status"></p>
+    </form>
+  </dialog>
+  <noscript>请启用 JavaScript 查看和发表留言。</noscript>
+</section>
+<script>
+  import { mountComments } from '../lib/comment-client';
+  document.querySelectorAll<HTMLElement>('[data-comments]').forEach(mountComments);
+</script>

@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import '../../../styles/comments.css';
+---
+<BaseLayout title="评论管理">
+  <section class="comment-admin" data-admin>
+    <h1>评论管理</h1>
+    <div class="comment-actions" role="group" aria-label="留言分类">
+      <button class="comment-secondary" data-filter="tasks" aria-pressed="true">待处理</button>
+      <button class="comment-secondary" data-filter="published" aria-pressed="false">已公开</button>
+      <button class="comment-secondary" data-filter="hidden" aria-pressed="false">已隐藏</button>
+    </div>
+    <p role="status"></p>
+    <ol class="comment-list"></ol>
+    <button class="comment-secondary" data-more hidden>加载更多</button>
+  </section>
+</BaseLayout>
+<script>
+  import { mountAdmin } from '../../../lib/comment-admin';
+  const root = document.querySelector<HTMLElement>('[data-admin]');
+  if (root) mountAdmin(root);
+</script>
