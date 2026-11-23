@@ -14,13 +14,17 @@ const structuredData = Astro.site ? {
 } : undefined;
 ---
 <BaseLayout title="文章归档" description={description} structuredData={structuredData}>
-  <header class="page-heading"><p class="eyebrow">THE JOURNAL</p><h1>思考的痕迹<span>.</span></h1><p>这里收录 Qt Widgets 开发笔记、Windows 工具排障及往期南沙区政府早报。</p></header>
+  <header class="page-heading">
+    <p class="eyebrow">THE JOURNAL</p>
+    <h1>思考的痕迹<span>.</span></h1>
+    <p>浏览 <a class="text-link" href="/writing/tech/">技术笔记</a>、往期南沙区政府早报与其他文章。</p>
+  </header>
   <div class="writing-tools" inert>
     <PostCategoryFilters posts={posts} showTotal />
     <label class="search-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><span class="sr-only">搜索文章</span><input type="search" id="post-search" placeholder="找一篇文章…" autocomplete="off" /></label>
   </div>
   <p id="search-count" class="search-count" role="status" aria-live="polite" hidden></p>
-  <div class="post-list archive-list">{posts.map(post => <PostRow post={post} />)}</div>
+  <ul class="post-list archive-list" role="list">{posts.map(post => <PostRow post={post} heading="h2" />)}</ul>
   <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">↳</span><h2>还没有找到这篇文章</h2><p>试试其他关键词，或看看全部文章。</p><button class="button-link" id="reset-search" type="button">清除筛选</button></div>
   <p class="archive-end">{posts.length} 篇记录 · 文字还会继续生长</p>
   <script>

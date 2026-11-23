@@ -1,8 +1,12 @@
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
 export async function getPosts() {
   const posts = await getCollection('posts', ({ data }) => !data.draft);
   return posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+}
+
+export function isTechnicalPost({ data }: CollectionEntry<'posts'>) {
+  return data.format === 'article' && !data.sample && (data.category === '技术' || data.category === '构建');
 }
 
 export const formatDate = (date: Date) =>

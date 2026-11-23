@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ site }) => {
   const posts = await getPosts();
   // 显式列出公开页面，不扫描 public/ 下的验证文件、模板或其他资源。
   const paths = [
-    '/', '/about/', '/writing/', '/projects/',
+    '/', '/about/', '/writing/', '/writing/tech/', '/projects/',
     ...projects.map(project => `/projects/${project.slug}/`),
     ...posts.map(post => `/writing/${post.id}/`),
   ];

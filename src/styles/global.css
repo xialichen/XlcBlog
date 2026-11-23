@@ -195,17 +195,17 @@
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .tags span { color: var(--muted); background: var(--surface); font-size: 10px; padding: 3px 9px; border-radius: 3px; }
   .writing-section { margin-top: 72px; }
-  .post-list { border-top: 1px solid var(--line); }
+  .post-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
   .post-row { display: grid; grid-template-columns: 120px 1fr; gap: 20px; padding: 25px 0 27px; border-bottom: 1px solid var(--line); }
   .post-row > time { font: 11px/1.8 var(--mono); color: var(--muted); padding-top: 3px; }
   .post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--muted); font-size: 10px; }
   .post-meta > span:first-child { color: var(--accent); }
   .sample-label { font-size: 9px; border: 1px solid var(--line); border-radius: 2px; padding: 0 4px; }
-  .post-row h3 { font-family: var(--serif); font-weight: 600; font-size: 19px; margin: 9px 0 7px; }
-  .post-row h3 a { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .post-row h3 a:hover { color: var(--accent); }
-  .post-row h3 svg { color: var(--muted); transition: transform .2s; }
-  .post-row h3 a:hover svg { transform: translateX(4px); }
+  .post-row-title { font-family: var(--serif); font-weight: 600; font-size: 19px; margin: 9px 0 7px; }
+  .post-row-title a { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .post-row-title a:hover { color: var(--accent); }
+  .post-row-title svg { color: var(--muted); transition: transform .2s; }
+  .post-row-title a:hover svg { transform: translateX(4px); }
   .post-row p { font-size: 12px; line-height: 1.8; color: var(--muted); padding-right: 28px; }
   .demo-note { color: var(--muted); font-size: 10px; margin-top: 18px; }
   .closing-note { margin: 67px 0 66px; display: flex; align-items: center; gap: 23px; }
@@ -373,9 +373,9 @@
     .writing-section { margin-top: 48px; }
     .post-row { grid-template-columns: 1fr; gap: 8px; padding-block: 22px; }
     .post-row > time { font-size: 10px; }
-    .post-row h3 { font-size: 18px; }
+    .post-row-title { font-size: 18px; }
     .post-row p { font-size: 12px; padding-right: 0; }
-    .post-row h3 a { gap: 12px; }
+    .post-row-title a { gap: 12px; }
     .closing-note { margin-block: 45px; gap: 15px; }
     .closing-note p { font-size: 16px; }
     .closing-note > span { font-size: 32px; }

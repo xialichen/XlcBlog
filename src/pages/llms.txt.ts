@@ -25,6 +25,7 @@ export const GET: APIRoute = async ({ site }) => {
       '## 站点入口',
       '',
       link('文章归档', '/writing/', '浏览全部文章，可按分类查找往期早报。'),
+      link('技术笔记', '/writing/tech/', '浏览 Qt Widgets 开发、Windows 工具排障与项目实践。'),
       link('项目列表', '/projects/', '查看 Qt 桌面应用工具、组件与博客项目。'),
       link('关于作者', '/about/', '了解作者与这个博客。'),
     ].join('\n'),
