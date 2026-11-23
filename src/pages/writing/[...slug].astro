@@ -14,7 +14,14 @@ export async function getStaticPaths() {
 const { post, next, hasNext } = Astro.props;
 const { Content, headings } = await render(post);
 const isBriefing = post.data.format === 'briefing';
+const isDigest = isBriefing && post.data.briefingLayout === 'digest';
 const datePublished = post.data.date.toISOString().slice(0, 10);
+const useMasthead = isDigest && post.data.title === `${post.data.category}｜${datePublished}`;
+const weekday = isDigest && new Intl.DateTimeFormat('zh-CN', { weekday: 'long', timeZone: 'UTC' }).format(post.data.date);
+// 长报在头条之后按栏目编排，移动端导航直接复用 Markdown 的栏目锚点。
+const sections = isDigest && headings.some(({ depth }) => depth === 3)
+  ? headings.filter(({ depth }) => depth === 2).slice(1)
+  : [];
 const site = Astro.site;
 const image = site && post.data.image ? new URL(post.data.image, site).href : undefined;
 const structuredData = site && !post.data.sample ? {
@@ -30,22 +37,25 @@ const structuredData = site && !post.data.sample ? {
 } : undefined;
 ---
 <BaseLayout title={post.data.title} description={post.data.description} article image={image} structuredData={structuredData}>
-  <article class:list={['article-page', { 'briefing-page': isBriefing }]}>
+  <article class:list={['article-page', { 'briefing-page': isBriefing, 'briefing-edition': isDigest }]}>
     <header class="article-header">
       <a class="back-link" href="/writing/">← 全部文章</a>
       <div class="post-meta">
-        <span>{post.data.category}</span><span aria-hidden="true">·</span>
-        <time datetime={datePublished}>{formatDate(post.data.date)}</time>
+        {!useMasthead && <><span>{post.data.category}</span><span aria-hidden="true">·</span></>}
+        <time datetime={datePublished}>{formatDate(post.data.date)}{weekday && ` ${weekday}`}</time>
         {!post.data.sample && <>
           <span aria-hidden="true">·</span>
           <a href="/about/" rel="author">{profile.name}{isBriefing ? ' 整理' : ''}</a>
         </>}
         <span aria-hidden="true">·</span><span>{readingMinutes(post.body)} 分钟阅读</span>
       </div>
-      <h1>{post.data.title}</h1>
+      <h1>{useMasthead ? <>{post.data.category}<span class="sr-only">｜{datePublished}</span></> : post.data.title}</h1>
       <p class="article-description">{post.data.description}</p>
       {post.data.sample && <p class="sample-notice">示例文章 · 用于展示排版和阅读体验</p>}
     </header>
+    {sections.length > 0 && <nav class="briefing-section-links" aria-label="本期栏目">
+      {sections.map(({ slug, text }) => <a href={`#${slug}`}>{text}</a>)}
+    </nav>}
     <div class="article-body-grid"><div class="prose" data-article-content><Content /></div><TableOfContents headings={headings} /></div>
     <footer class="article-footer"><div class="tags">{post.data.tags.map(tag => <span>{tag}</span>)}</div><p>谢谢你读到这里。</p>{hasNext && <a class="next-article" href={`/writing/${next.id}/`}><span>接着读一篇 →</span><strong>{next.data.title}</strong></a>}</footer>
     {!post.data.sample && <ArticleComments article={post.id} />}
