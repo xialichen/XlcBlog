@@ -1,6 +1,7 @@
 ---
 title: 'Qt Widgets 弹窗黑角与动画黑底：从圆角、阴影到 QRollEffect'
 description: '以 Windows 10 和 Qt 5.15.2 为例，记录组合框、菜单和工具提示的圆角黑底、阴影留边及滚动动画透明修复，并说明如何用桌面像素验证。'
+image: '/images/qt-popup-corners-and-animation/01-combo-corners.png'
 date: 2026-11-19
 category: '技术'
 format: article

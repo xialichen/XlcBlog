@@ -1,9 +1,11 @@
 // 用真实资料替换这里的示例介绍；填写链接后，页脚会自动显示。
+const name = '夏黎辰';
+
 export const profile = {
-  name: '夏黎辰',
-  title: '夏黎辰 · 思考与创造',
-  description: '记录技术、设计与日常思考，也把一些想法做成小小的作品。',
-  introduction: '你好，我是 夏黎辰。喜欢简单而有用的事物，在代码与文字之间，把好奇心变成一点点具体的东西。',
+  name,
+  title: `${name} · 思考与创造`,
+  description: `${name}的中文个人博客，记录 Qt Widgets 开发、Windows 工具排障、个人项目和日常思考，也整理广州南沙区政府公开发布的公告。`,
+  introduction: `你好，我是 ${name}。喜欢简单而有用的事物，在代码与文字之间，把好奇心变成一点点具体的东西。`,
   note: '一个安静的角落，存放思考，也存放正在生长的想法。',
   sample: true,
   email: '',

@@ -1,6 +1,7 @@
 ---
 title: 'Qt Widgets 属性面板为什么有两种底色？排查 QScrollArea、分隔条和滑轨'
 description: '在 Qt 5.15.2 中逐层定位 QScrollArea 视口和内容控件的背景填充，再处理分隔手柄与滚动条，并附 Fusion 取色复现。'
+image: '/images/qt-widget-background-inheritance/01-property-panel.png'
 date: 2026-11-19
 category: '技术'
 format: article
@@ -8,6 +9,8 @@ tags: ['Qt', 'Qt Widgets', 'QScrollArea', 'QSplitter', 'QScrollBar']
 draft: false
 sample: false
 ---
+
+在 Qt 5.15.2 中，`QScrollArea` 的视口和 `setWidget()` 安装的内容控件会分别自动填充背景。普通属性表单需要露出父面板底色时，先安装内容，再分别关闭两层的 `autoFillBackground`。分隔手柄或滚动条滑轨仍有色差时，再检查样式是否给它们单独填了颜色。
 
 一个 Qt Widgets 页面加上可滚动的“属性设置”后，标题和表单看起来像放在两块面板上。标题周围是墨蓝色 `#222733`，复选框之间的留白却是更深的 `#191e28`。输入框有自己的底色很自然，奇怪的是，连没有控件的地方也跟着变了色。
 
@@ -190,6 +193,8 @@ QCOMPARE(pixel(root, split->handle(1), QPoint(3, 3)), QColor("#987654"));
 1. 色差从滚动表单上沿开始：分别查看 `viewport()` 和 `widget()`，不要把 `NoFrame` 当成透明开关。
 2. 只剩手柄或空轨道异色：检查样式是否在绘制阶段又铺了一层，以及滚动条是否仍声明自己不透明。
 3. 换用双色或渐变背景再测：如果手柄移动后能显示新位置的颜色，跨分界线的空滑轨也能同时透出两种色，才说明底色确实来自下面的那层。
+
+如果黑底只出现在弹窗圆角外或展开动画中，可以按[Qt Widgets 弹窗黑角与动画黑底](/writing/qt-popup-corners-and-animation/)里的方法，检查弹窗的逐像素透明度和动画窗口。
 
 ## 附录：复现四次取色的完整程序
 

@@ -3,13 +3,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Arrow from '../../components/Arrow.astro';
 import ProjectName from '../../components/ProjectName.astro';
 import { projects } from '../../data/site';
+import { websiteId } from '../../lib/seo';
 export function getStaticPaths() {
   return projects.map(project => ({ params: { slug: project.slug }, props: { project } }));
 }
 const { project } = Astro.props;
 const external = project.url?.startsWith('https://');
+const codeRepository = project.url?.startsWith('https://github.com/') ? project.url : undefined;
+const structuredData = Astro.site && !project.sample ? {
+  '@type': 'WebPage',
+  name: project.name,
+  isPartOf: { '@id': websiteId(Astro.site) },
+  mainEntity: codeRepository ? {
+    '@type': 'SoftwareSourceCode',
+    name: project.name,
+    description: project.description,
+    codeRepository,
+    isBasedOn: project.source?.url,
+  } : undefined,
+} : undefined;
 ---
-<BaseLayout title={project.name} description={project.description}>
+<BaseLayout title={project.name} description={project.description} structuredData={structuredData}>
   <article class="project-detail">
     <header class="article-header">
       <a class="back-link" href="/projects/">← 全部项目</a>

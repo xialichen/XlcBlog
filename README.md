@@ -94,11 +94,11 @@ npm run email:render -- examples/email/nansha-morning-2026-10-15.json
 
 ## 部署到 Cloudflare Pages（当前生产环境）
 
-- 正式地址：`https://1610161.xyz`
+- 正式地址为 `https://www.xialichen.com`。
 - Pages 项目：`xlc-blog`，默认地址：`https://xlc-blog.pages.dev`
 - GitHub 仓库：`zcy946/XlcBlog`，生产分支：`main`
 - 构建命令：`npm run build`，输出目录：`dist`，根目录为仓库根目录。
-- 构建环境变量：`SITE_URL=https://1610161.xyz`、`NODE_VERSION=24.18.0`。
+- 构建使用 `SITE_URL=https://www.xialichen.com` 和 `NODE_VERSION=24.18.0`。
 
 以上设置位于 Cloudflare Pages 项目配置中。推送到 GitHub 的 `main` 分支会自动构建并发布；本地尚未提交、推送的修改不会上线。可在 Pages 的 Deployments 中检查构建日志及部署状态。
 
@@ -157,13 +157,15 @@ Cloudflare Pages 的预览和生产环境分别绑定各自的 `COMMENTS_DB`。�
 
 ## 搜索引擎站点地图
 
-每次 `npm run build` 都会通过 Astro 静态端点重新生成 `dist/sitemap.xml` 和 `dist/robots.txt`，无需手动维护文章地址。Cloudflare Pages 沿用 `SITE_URL=https://1610161.xyz`。
+每次 `npm run build` 都会通过 Astro 静态端点重新生成 `dist/sitemap.xml`、`dist/robots.txt` 和 `dist/llms.txt`。Cloudflare Pages 使用 `SITE_URL=https://www.xialichen.com`。
 
-- 提交地址：`https://1610161.xyz/sitemap.xml`，可在 Google Search Console 的“站点地图”中提交。
+- 可在 Google Search Console 的“站点地图”中提交 `https://www.xialichen.com/sitemap.xml`。
 - 包含首页、关于、文章及项目列表、项目详情，以及与详情页共用 `getPosts()` 筛选的已发布文章。
 - `draft: true` 的文章、404、模板和验证文件不进入站点地图。增加新的独立公开页面时，更新 `src/pages/sitemap.xml.ts` 中的公开路径列表；新增文章及项目自动跟随内容更新。
 - 不虚构 `lastmod`：现有内容只有发布日期，没有可靠的最后修改时间，因此暂不输出该字段。
 - 未设置 `SITE_URL` 的本地预览生成空站点地图，robots 不声明站点地图，避免混入 localhost 地址。正式部署必须设置正确的 `SITE_URL`。
 - 站点地图帮助搜索引擎发现网页，不保证收录或排名；提交由站点所有者在 Search Console 中完成。
 
-构建后可运行 `SITE_URL=https://1610161.xyz node scripts/check-sitemap.mjs`，核对站点地图与所有实际生成的公开 HTML 页面一致，并检查 robots 声明、重复地址及错误页排除。
+构建后可运行 `node scripts/check-sitemap.mjs`，核对生产站点地图与生成的公开 HTML 页面一致，并检查 robots 声明、重复地址及错误页排除。使用其他域名时，运行检查时使用与构建相同的 `SITE_URL`。
+
+配置 `SITE_URL` 后，首页、关于页、归档、项目和正式文章会生成与页面规范地址一致的 JSON-LD。文章可用 `image: '/images/…'` 指定正文中已有的代表图片，供结构化数据和社交分享使用。

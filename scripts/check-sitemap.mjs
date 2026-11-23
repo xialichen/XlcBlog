@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const base = new URL(process.env.SITE_URL || 'https://1610161.xyz');
+const base = new URL(process.env.SITE_URL || 'https://www.xialichen.com');
 const root = new URL('../dist/', import.meta.url);
 const rootPath = fileURLToPath(root);
 const xml = await readFile(new URL('sitemap.xml', root), 'utf8');

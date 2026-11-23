@@ -5,10 +5,17 @@ import PostRow from "../components/PostRow.astro";
 import Arrow from "../components/Arrow.astro";
 import { profile, projects } from "../data/site";
 import { getPosts } from "../lib/posts";
+import { authorSchema, websiteId } from "../lib/seo";
 const posts = (await getPosts()).slice(0, 3);
+const structuredData = Astro.site ? {
+  "@type": "WebSite",
+  "@id": websiteId(Astro.site),
+  name: profile.title,
+  publisher: authorSchema(Astro.site),
+} : undefined;
 ---
 
-<BaseLayout>
+<BaseLayout structuredData={structuredData}>
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
       <p class="eyebrow">
@@ -74,7 +81,7 @@ const posts = (await getPosts()).slice(0, 3);
     </div>
   </section>
   <div class="intro-strip">
-    <p><span>在这里</span> 写一点文字，做一些小东西，记录沿途的发现。</p><span
+    <p><span>在这里</span> 写 Qt Widgets 开发与 Windows 工具排障，也整理南沙区政府公开公告。</p><span
       class="strip-mark"
       aria-hidden="true">✳</span>
   </div>

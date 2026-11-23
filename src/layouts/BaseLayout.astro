@@ -2,27 +2,48 @@
 import '../styles/global.css';
 import '../styles/page-transitions.css';
 import { profile } from '../data/site';
-interface Props { title?: string; description?: string; article?: boolean; }
-const { title, description = profile.description, article = false } = Astro.props;
+interface Props {
+  title?: string;
+  description?: string;
+  article?: boolean;
+  image?: string;
+  noindex?: boolean;
+  structuredData?: Record<string, unknown>;
+}
+const { title, description = profile.description, article = false, image, noindex, structuredData } = Astro.props;
 const pageTitle = title ? `${title} · ${profile.name}` : profile.title;
 const path = Astro.url.pathname;
 const canonical = Astro.site ? new URL(path, Astro.site).href : undefined;
+const language = 'zh-CN';
+const jsonLd = canonical && structuredData
+  ? JSON.stringify({
+    '@context': 'https://schema.org',
+    url: canonical,
+    inLanguage: language,
+    description,
+    ...structuredData,
+  }).replaceAll('<', '\\u003c')
+  : undefined;
 const navigation = [{ href: '/', name: '首页' }, { href: '/writing/', name: '文章' }, { href: '/projects/', name: '项目' }, { href: '/about/', name: '关于' }];
 ---
 <!doctype html>
-<html lang="zh-CN">
+<html lang={language}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
     {path === '/' && <meta name="baidu-site-verification" content="codeva-CMZ2AauHU1" />}
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f8f7f3" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={profile.title} />
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:locale" content="zh_CN" />
+    {image && <meta property="og:image" content={image} />}
     {canonical && <><link rel="canonical" href={canonical} /><meta property="og:url" content={canonical} /></>}
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd}></script>}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{pageTitle}</title>
     <!-- 样式资源到达前也为浏览器画布提供不透明的主题底色。 -->

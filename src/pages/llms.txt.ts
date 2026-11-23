@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ site }) => {
   );
   const sections = [
     `# ${profile.title}`,
-    `> ${profile.name}的中文个人博客，记录 Qt Widgets 开发、Windows 工具排障、个人项目和日常思考，也整理广州南沙区政府公开发布的公告。`,
+    `> ${profile.description}`,
     [
       '## 站点入口',
       '',
@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ site }) => {
     sections.push([
       '## 南沙区政府早报',
       '',
-      link(latestBriefing.data.title, `/writing/${latestBriefing.id}/`, '本站整理的最新一期，包含公告摘要、原文链接和办理提醒。'),
+      link(latestBriefing.data.title, `/writing/${latestBriefing.id}/`, latestBriefing.data.description),
     ].join('\n'));
   }
 

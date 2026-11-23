@@ -1,6 +1,7 @@
 ---
 title: '绕过 Qt 写死的边框，给原生 QWhatsThis 画圆角'
 description: '在 Qt 5.15.2 中为原生 QWhatsThis 帮助弹窗绘制圆角和阴影，保留正文与链接交互，并附最小示例。'
+image: '/images/qt-whatsthis-rounded-popup/02-jpeg-eystyle.png'
 date: 2026-11-19
 category: '技术'
 format: article

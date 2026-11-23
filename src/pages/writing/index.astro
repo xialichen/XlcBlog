@@ -2,11 +2,19 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostRow from '../../components/PostRow.astro';
 import PostCategoryFilters from '../../components/PostCategoryFilters.astro';
+import { profile } from '../../data/site';
 import { getPosts } from '../../lib/posts';
+import { websiteId } from '../../lib/seo';
 const posts = await getPosts();
+const description = `浏览${profile.name}的 Qt Widgets 开发笔记、Windows 工具排障、个人项目记录与南沙区政府早报，可按分类查找往期文章。`;
+const structuredData = Astro.site ? {
+  '@type': 'CollectionPage',
+  name: '文章归档',
+  isPartOf: { '@id': websiteId(Astro.site) },
+} : undefined;
 ---
-<BaseLayout title="文章" description="关于技术、设计与日常的观察和记录。">
-  <header class="page-heading"><p class="eyebrow">THE JOURNAL</p><h1>思考的痕迹<span>.</span></h1><p>记录学到的东西，也记录还没想明白的问题。</p></header>
+<BaseLayout title="文章归档" description={description} structuredData={structuredData}>
+  <header class="page-heading"><p class="eyebrow">THE JOURNAL</p><h1>思考的痕迹<span>.</span></h1><p>这里收录 Qt Widgets 开发笔记、Windows 工具排障及往期南沙区政府早报。</p></header>
   <div class="writing-tools" inert>
     <PostCategoryFilters posts={posts} showTotal />
     <label class="search-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><span class="sr-only">搜索文章</span><input type="search" id="post-search" placeholder="找一篇文章…" autocomplete="off" /></label>

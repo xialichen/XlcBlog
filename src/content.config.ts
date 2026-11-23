@@ -7,6 +7,7 @@ const posts = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    image: z.string().startsWith('/images/').optional(),
     date: z.coerce.date(),
     category: z.string(),
     format: z.enum(['article', 'briefing']).default('article'),
