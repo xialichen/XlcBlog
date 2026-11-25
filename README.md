@@ -34,9 +34,9 @@ npm run preview
 
 首页展示三个 `featured: true` 的 GitHub 项目，项目列表同时保留 XlcBlog 本站。项目介绍根据下列仓库的 README 与公开实现手动整理，构建和访问网站均不依赖 GitHub API；仓库功能变化后需更新 `src/data/site.ts`。封面为本站绘制的主题示意，并非产品截图。
 
-- [qlementine](https://github.com/zcy946/qlementine)：面向 Qt5 的现代 QStyle 分支；详情页保留 [oclero/qlementine](https://github.com/oclero/qlementine) 和 Olivier Cléro 的上游署名。
-- [QtForge](https://github.com/zcy946/QtForge)：CMake、Qt5 Widgets、C++17 应用脚手架，集成 XlcLogger 与 XlcLogWidget。
-- [XLCCircularLoadingIndicator](https://github.com/zcy946/XLCCircularLoadingIndicator)：Qt5 环形加载组件，支持 Dot 与 Moon 样式。
+- [qlementine](https://github.com/xialichen/qlementine)：面向 Qt5 的现代 QStyle 分支；详情页保留 [oclero/qlementine](https://github.com/oclero/qlementine) 和 Olivier Cléro 的上游署名。
+- [QtForge](https://github.com/xialichen/QtForge)：CMake、Qt5 Widgets、C++17 应用脚手架，集成 XlcLogger 与 XlcLogWidget。
+- [XLCCircularLoadingIndicator](https://github.com/xialichen/XLCCircularLoadingIndicator)：Qt5 环形加载组件，支持 Dot 与 Moon 样式。
 
 新文章示例：
 
@@ -78,7 +78,7 @@ npm run email:render -- examples/email/nansha-morning-2026-10-15.json
 
 - 正式地址为 `https://www.xialichen.com`。
 - Pages 项目：`xlc-blog`，默认地址：`https://xlc-blog.pages.dev`
-- GitHub 仓库：`zcy946/XlcBlog`，生产分支：`main`
+- GitHub 仓库：`xialichen/XlcBlog`，生产分支：`main`
 - 构建命令：`npm run build`，输出目录：`dist`，根目录为仓库根目录。
 - 构建使用 `SITE_URL=https://www.xialichen.com` 和 `NODE_VERSION=24.18.0`。
 

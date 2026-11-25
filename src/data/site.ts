@@ -9,7 +9,7 @@ export const profile = {
   note: '一个安静的角落，存放思考，也存放正在生长的想法。',
   sample: true,
   email: '',
-  github: 'https://github.com/zcy946',
+  github: 'https://github.com/xialichen',
 };
 
 export interface Project {
@@ -42,13 +42,13 @@ export const projects: Project[] = [
     featured: true,
     status: 'Fork 项目',
     sample: false,
-    url: 'https://github.com/zcy946/qlementine',
+    url: 'https://github.com/xialichen/qlementine',
     source: { label: 'oclero/qlementine · Olivier Cléro', url: 'https://github.com/oclero/qlementine' },
     paragraphs: [
       { title: '统一桌面应用的视觉语言', text: 'Qlementine 通过自定义 QlementineStyle，为 Qt Widgets 应用提供现代化的控件外观。它可以替换默认 QStyle，让现有界面在一致的视觉语言下呈现。' },
       { title: '样式之外的组件与工具', text: '除了 QStyle 实现，仓库还包含帮助编写自定义 QWidget 的辅助工具，以及 Qt 标准组件之外的控件，例如 Switch。README 展示了浅色与深色界面效果。' },
       { title: '构建与接入', text: '此分支的 README 以 Qt 5.15.2、C++17 和 CMake 3.21 及以上版本为基础。通过 CMake 引入依赖后，使用 QApplication::setStyle 设置应用样式；具体用法可查看仓库文档。' },
-      { title: '项目来源', text: '这是 zcy946 名下的派生仓库，上游为 Olivier Cléro 创建的 oclero/qlementine，采用 MIT 许可证。本页的介绍与源码链接均指向 zcy946/qlementine 分支。' },
+      { title: '项目来源', text: '这是 xialichen 名下的派生仓库，上游为 Olivier Cléro 创建的 oclero/qlementine，采用 MIT 许可证。本页的介绍与源码链接均指向 xialichen/qlementine 分支。' },
     ],
   },
   {
@@ -63,7 +63,7 @@ export const projects: Project[] = [
     featured: true,
     status: '应用脚手架',
     sample: false,
-    url: 'https://github.com/zcy946/QtForge',
+    url: 'https://github.com/xialichen/QtForge',
     paragraphs: [
       { title: '为新项目准备一个起点', text: 'QtForge 使用 CMake 管理 Qt5 Widgets 应用，提供可运行的日志控件示例，并自动开启 AUTOMOC、AUTOUIC 和 AUTORCC。工程使用 C++17，适合作为新桌面应用的基础。' },
       { title: '日志输出与界面查看', text: '内置 XlcLogger 动态库封装 spdlog，提供分级日志宏、控制台与可选轮转文件输出，以及常用 Qt 类型的格式化支持。XlcLogWidget 静态库在界面中实时展示日志，支持关键字搜索、级别筛选、按级别着色和多选复制。' },
@@ -83,7 +83,7 @@ export const projects: Project[] = [
     featured: true,
     status: '界面组件',
     sample: false,
-    url: 'https://github.com/zcy946/XLCCircularLoadingIndicator',
+    url: 'https://github.com/xialichen/XLCCircularLoadingIndicator',
     paragraphs: [
       { title: '让等待有一个清晰的反馈', text: '这个组件的灵感来自 Windows 10/11 的开机动画，使用 segoe_slboot.ttf 中的字体图标呈现加载效果。仓库 README 中提供了动画演示。' },
       { title: '两种样式与简单的控制接口', text: 'XLCCircularLoadingIndicator 继承自 QLabel，构造时可选择 Pattern::Dot 或 Pattern::Moon，默认使用 Dot。通过 Start() 和 Stop() 控制动画，内部使用 QTimer 更新当前显示的字符。' },
@@ -102,11 +102,11 @@ export const projects: Project[] = [
     featured: false,
     status: '持续构建',
     sample: false,
-    url: 'https://github.com/zcy946/XlcBlog',
+    url: 'https://github.com/xialichen/XlcBlog',
     paragraphs: [
       { title: '从一个自己的空间开始', text: '这个网站将个人介绍、项目和文章放在一起。首页负责介绍，文章页留给阅读，项目页记录从想法到实现的过程。' },
       { title: '让内容成为主角', text: '暖白底色、清晰的字号层级和适度留白构成页面的基础。文字保持舒适的行宽，导航和交互保持简单，同时适配手机和深色阅读环境。' },
-      { title: '构建与维护', text: '网站使用 Astro 生成静态页面，文章使用 Markdown 管理。构建产物可以直接部署在自己的服务器上，个人资料和项目资料在配置文件中集中维护。源码托管于 GitHub 的 zcy946/XlcBlog 仓库，可通过上方入口查看源码，以及 README 中的本地开发、内容维护和服务器部署说明。' },
+      { title: '构建与维护', text: '网站使用 Astro 生成静态页面，文章使用 Markdown 管理。构建产物可以直接部署在自己的服务器上，个人资料和项目资料在配置文件中集中维护。源码托管于 GitHub 的 xialichen/XlcBlog 仓库，可通过上方入口查看源码，以及 README 中的本地开发、内容维护和服务器部署说明。' },
     ],
   },
 ];
