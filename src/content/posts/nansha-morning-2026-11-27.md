@@ -26,7 +26,7 @@ sample: false
 
 ### 「全球365」实习补贴：单位交记录表的期限从3个工作日延至2个月
 
-11月26日起施行的修订指南规定，接收单位须在每名实习生结束实习之日起**2个月内**提交记录表；旧版为3个工作日。**11月25日前（不含当天）**已完成实习且符合条件的，单位须在12月31日前申报。境内外全日制大专及以上在校生可通过「@南沙人才服务平台」实习专区申请到南沙现场实习；补贴仍为每月税前1000元、每次最长3个月，实习期间提供免费住宿，不足1个月不发补贴。<small class="briefing-source">[开发区人才发展局修订指南](https://www.gzns.gov.cn/tzns/tzdt/tzgg/content/post_11122783.html) · [5月版指南](https://www.gzns.gov.cn/zwgk/zcwjjjd/zcdx/content/post_10818758.html)</small>
+11月26日起施行的修订指南规定，接收单位须在每名实习生结束实习之日起**2个月内**提交记录表；旧版为3个工作日。<strong>11月25日前（不含当天）</strong>已完成实习且符合条件的，单位须在12月31日前申报。境内外全日制大专及以上在校生可通过「@南沙人才服务平台」实习专区申请到南沙现场实习；补贴仍为每月税前1000元、每次最长3个月，实习期间提供免费住宿，不足1个月不发补贴。<small class="briefing-source">[开发区人才发展局修订指南](https://www.gzns.gov.cn/tzns/tzdt/tzgg/content/post_11122783.html) · [5月版指南](https://www.gzns.gov.cn/zwgk/zcwjjjd/zcdx/content/post_10818758.html)</small>
 
 ### 补录｜广州人社答疑：灵活就业社保补贴首次申请须在登记后1年内提出
 
@@ -270,6 +270,6 @@ sample: false
     "displayed_nodes": 0,
     "items": []
   },
-  "report_body_sha256": "4c1dd85e7f54822ced34d1b2a73a35522f72dd58b8c341ba9f2a6ff7bf79e32a"
+  "report_body_sha256": "a2ca356a48bafd8cd2db1e24eff45bc4d2d9f6d2195341c9e9427ef124420df5"
 }
 -->
